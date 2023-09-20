@@ -5,13 +5,13 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-objective_url = 'https://raw.githubusercontent.com/LucasMichaud2/streamlit_test.py/main/Objectives_updated-Table%201.csv'
+objective_url = 'https://raw.githubusercontent.com/LucasMichaud2/GAMNED_test_app/main/Objectives_updated-Table%201.csv'
 df_objective = pd.read_csv(objective_url)
 
-data_url =  'https://raw.githubusercontent.com/LucasMichaud2/streamlit_test.py/main/GAMNED_dataset_V2.2.csv'
+data_url =  'https://raw.githubusercontent.com/LucasMichaud2/GAMNED_test_app/main/GAMNED_dataset_V2.2.csv'
 df_data = pd.read_csv(data_url)
 
-age_url = 'https://raw.githubusercontent.com/LucasMichaud2/streamlit_test.py/main/Global_data-Table%201.csv'
+age_url = 'https://raw.githubusercontent.com/LucasMichaud2/GAMNED_test_app/main/Global_data-Table%201.csv'
 age_date = pd.read_csv(age_url)
 
 
