@@ -235,13 +235,15 @@ target_df = pd.DataFrame(target_list)
 st.title('GAMNED Marketing Tool')
 st.text(' ')
 st.subheader('Frequently Used')
-st.sidebar.title('Parameters')
+st.sidebar.title('Heatmap Parameters')
 
 selected_objective = st.sidebar.selectbox('Select an objective', objective_df)
 selected_age = st.sidebar.multiselect("Select an age", age_df)
 selected_age = ', '.join(selected_age)
 selected_target = st.sidebar.selectbox('Select target', target_df)
+st.sidebar.title('Budget Parameters')
 input_budget = st.sidebar.number_input('Budget', value=0)
+channel_number = st.sidebar.number_input('Number of channels', value=0)
 
 
 
@@ -259,7 +261,18 @@ if selected_target == 'b2b':
   df_rating1 = df_rating1.reset_index()
 df_rating2 = gamned_class.get_format_rating(df_rating1)
 df_rating3 = gamned_class.get_objective(selected_objective, df_rating2)
-format_rating = df_rating3.head(20)
+full_format_rating = df_rating3.copy()
+format_rating = df_rating3.copy()
+format_rating['format'] = format_rating['channel'] + ' - ' + format_rating['formats']
+format_rating = format_rating.drop(['formats'], axis=1)
+format_rating = format_rating[['channel', 'format', selected_objective]]
+min_format = full_format_rating[selected_objective].min()
+max_format = full_format_rating[selected_objective].max()
+format_rating['norm'] = (format_rating[selected_objective] - min_format) / (max_format - min_format)*100
+format_rating['norm'] = format_rating['norm'].apply(round_5)
+format_rating['mapped_colors'] = format_rating['norm'].map(color_dictionary)
+format_rating = format_rating.reset_index()
+format_rating = format_rating.drop(['index'], axis=1)
 
 ################################## Computing Scores ###################################
 
@@ -294,6 +307,18 @@ heat_map = heat_map.reset_index()
 heat_map2 = heat_map.head(10)
 
 
+##################################### Max Channel Budget ##################################
+
+max_display = 5000
+max_inread_video = 5000
+max_youtube = 4000
+max_facebook = 4000
+max_tiktok = 4000
+max_instagram = 3000
+max_linkedin = 4000
+max_snapchat = 3000
+max_search = 1000
+
 ##################################### Buidling Budget #####################################
 
 cost_rating = cost_rating.drop([selected_objective], axis=1)
@@ -303,70 +328,174 @@ cost_rating_std = cost_rating['average'].std()
 cost_rating_mean = cost_rating['average'].mean()
 cost_rating['norm'] = (cost_rating['average'] - cost_rating_mean) / cost_rating_std
 threshold = cost_rating['norm'].max() - 0.50*cost_rating['norm'].max()
-df_selection = cost_rating[cost_rating['norm'] > threshold]
-
-df_budget = df_selection.copy()
-average_max = df_budget['average'].max()
-average_min = df_budget['average'].min()
-average_diff = average_max - average_min
-df_budget['distribution'] = df_budget['average'] / df_budget['average'].sum()
-df_budget['distribution'] = df_budget['distribution'].apply(lambda x: round(x, 2))
-df_budget['allowance'] = input_budget * df_budget['distribution']
-columns_to_drop = ['average', 'index', 'norm', 'distribution']
-df_allowance = df_budget.drop(columns=columns_to_drop)
 
 # df_allowance now contains the DataFrame with the specified columns dropped
+
+##################################### Imposed budget ######################################
+
+if channel_number == 0:
+  if input_budget < 5001 and selected_objective == 'consideration':
+    disp_allow = input_budget - 500
+    budget_lib1 = {
+      'channel': ['display', 'search'],
+      'allowance': [disp_allow, 500]
+    }
+    df_allowance = pd.DataFrame(budget_lib1)
+    
+  elif input_budget < 5001:
+    df_selection = cost_rating.head(1)
+    df_budget = df_selection.copy()
+    average_max = df_budget['average'].max()
+    average_min = df_budget['average'].min()
+    average_diff = average_max - average_min
+    df_budget['distribution'] = df_budget['average'] / df_budget['average'].sum()
+    df_budget['distribution'] = df_budget['distribution'].apply(lambda x: round(x, 2))
+    df_budget['allowance'] = input_budget * df_budget['distribution']
+    columns_to_drop = ['average', 'index', 'norm', 'distribution']
+    df_allowance = df_budget.drop(columns=columns_to_drop)
+    
+  elif input_budget < 10001 and input_budget < 5001:
+    df_selection = cost_rating.head(2)
+    df_budget = df_selection.copy()
+    average_max = df_budget['average'].max()
+    average_min = df_budget['average'].min()
+    average_diff = average_max - average_min
+    df_budget['distribution'] = df_budget['average'] / df_budget['average'].sum()
+    df_budget['distribution'] = df_budget['distribution'].apply(lambda x: round(x, 2))
+    df_budget['allowance'] = input_budget * df_budget['distribution']
+    columns_to_drop = ['average', 'index', 'norm', 'distribution']
+    df_allowance = df_budget.drop(columns=columns_to_drop)
+
+  else:
+    df_selection = cost_rating[cost_rating['norm'] > threshold]
+    df_budget = df_selection.copy()
+    average_max = df_budget['average'].max()
+    average_min = df_budget['average'].min()
+    average_diff = average_max - average_min
+    df_budget['distribution'] = df_budget['average'] / df_budget['average'].sum()
+    df_budget['distribution'] = df_budget['distribution'].apply(lambda x: round(x, 2))
+    df_budget['allowance'] = input_budget * df_budget['distribution']
+    columns_to_drop = ['average', 'index', 'norm', 'distribution']
+    df_allowance = df_budget.drop(columns=columns_to_drop)
+
+else:
+  df_selection = cost_rating.head(channel_number)
+  st.dataframe(df_selection)
+  df_budget = df_selection.copy()
+  st.dataframe(df_budget)
+  average_max = df_budget['average'].max()
+  average_min = df_budget['average'].min()
+  average_diff = average_max - average_min
+  df_budget['distribution'] = df_budget['average'] / df_budget['average'].sum()
+  df_budget['distribution'] = df_budget['distribution'].apply(lambda x: round(x, 2))
+  df_budget['allowance'] = input_budget * df_budget['distribution']
+  st.dataframe(df_budget)
+  columns_to_drop = ['average', 'index', 'norm', 'distribution']
+  df_allowance = df_budget.drop(columns=columns_to_drop)
+  st.dataframe(df_allowance)
+  
+
+
 
 
 ##################################### Budget Rules ########################################
 
-if input_budget < 4001 and selected_objective == 'consideration':
-  disp_allow = input_budget - 500
-  budget_lib1 = {
-    'channel': ['display', 'search'],
-    'allowance': [disp_allow, 500]
-  }
-  df_allowance = pd.DataFrame(budget_lib1)
-  
-elif input_budget < 4001:
-  df_allowance = df_allowance.head(1)
-  df_allowance.at[0, 'allowance'] = input_budget
-  
-elif input_budget < 70001 and input_budget > 5001:
-  if df_allowance.shape[0] > 3:
-    df_budget = df_budget.head(3)
-    df_budget['allowance'] = input_budget * df_budget['distribution']
-    df_allowance = df_budget.drop(columns=columns_to_drop)
 
 
 
   
+#elif input_budget < 100001 and input_budget > 5001:
+  #if df_allowance.shape[0] > 2:
+    #df_budget = df_budget.head(2)
+    #df_budget['allowance'] = input_budget * df_budget['distribution']
+    #df_allowance = df_budget.drop(columns=columns_to_drop)
 
+  
 
 
 
 ##################################### taking out the code and name ########################
 
-name0 = heat_map2.at[0, 'channel']
-color0 = heat_map2.at[0, 'mapped_colors']
-name1 = heat_map2.at[1, 'channel']
-color1 = heat_map2.at[1, 'mapped_colors']
-name2 = heat_map2.at[2, 'channel']
-color2 = heat_map2.at[2, 'mapped_colors']
-name3 = heat_map2.at[3, 'channel']
-color3 = heat_map2.at[3, 'mapped_colors']
-name4 = heat_map2.at[4, 'channel']
-color4 = heat_map2.at[4, 'mapped_colors']
-name5  = heat_map2.at[5, 'channel']
-color5 = heat_map2.at[5, 'mapped_colors']
-name6  = heat_map2.at[6, 'channel']
-color6 = heat_map2.at[6, 'mapped_colors']
-name7  = heat_map2.at[7, 'channel']
-color7 = heat_map2.at[7, 'mapped_colors']
-name8  = heat_map2.at[8, 'channel']
-color8 = heat_map2.at[8, 'mapped_colors']
-name9  = heat_map2.at[9, 'channel']
-color9 = heat_map2.at[9, 'mapped_colors']
+name0 = format_rating.at[0, 'format']
+color0 = format_rating.at[0, 'mapped_colors']
+name1 = format_rating.at[1, 'format']
+color1 = format_rating.at[1, 'mapped_colors']
+name2 = format_rating.at[2, 'format']
+color2 = format_rating.at[2, 'mapped_colors']
+name3 = format_rating.at[3, 'format']
+color3 = format_rating.at[3, 'mapped_colors']
+name4 = format_rating.at[4, 'format']
+color4 = format_rating.at[4, 'mapped_colors']
+name5  = format_rating.at[5, 'format']
+color5 = format_rating.at[5, 'mapped_colors']
+name6  = format_rating.at[6, 'format']
+color6 = format_rating.at[6, 'mapped_colors']
+name7  = format_rating.at[7, 'format']
+color7 = format_rating.at[7, 'mapped_colors']
+name8  = format_rating.at[8, 'format']
+color8 = format_rating.at[8, 'mapped_colors']
+name9  = format_rating.at[9, 'format']
+color9 = format_rating.at[9, 'mapped_colors']
+name10  = format_rating.at[10, 'format']
+color10 = format_rating.at[10, 'mapped_colors']
+name11  = format_rating.at[11, 'format']
+color11 = format_rating.at[11, 'mapped_colors']
+name12  = format_rating.at[12, 'format']
+color12 = format_rating.at[12, 'mapped_colors']
+name13  = format_rating.at[13, 'format']
+color13 = format_rating.at[13, 'mapped_colors']
+name14  = format_rating.at[14, 'format']
+color14 = format_rating.at[14, 'mapped_colors']
+name15  = format_rating.at[15, 'format']
+color15 = format_rating.at[15, 'mapped_colors']
+name16  = format_rating.at[16, 'format']
+color16 = format_rating.at[16, 'mapped_colors']
+name17  = format_rating.at[17, 'format']
+color17 = format_rating.at[17, 'mapped_colors']
+name18  = format_rating.at[18, 'format']
+color18 = format_rating.at[18, 'mapped_colors']
+name19  = format_rating.at[19, 'format']
+color19 = format_rating.at[19, 'mapped_colors']
+name20  = format_rating.at[20, 'format']
+color20 = format_rating.at[20, 'mapped_colors']
+name21  = format_rating.at[21, 'format']
+color21 = format_rating.at[21, 'mapped_colors']
+name22  = format_rating.at[22, 'format']
+color22 = format_rating.at[22, 'mapped_colors']
+name23  = format_rating.at[23, 'format']
+color23 = format_rating.at[23, 'mapped_colors']
+name24  = format_rating.at[24, 'format']
+color24 = format_rating.at[24, 'mapped_colors']
+name25  = format_rating.at[25, 'format']
+color25 = format_rating.at[25, 'mapped_colors']
+name26  = format_rating.at[26, 'format']
+color26 = format_rating.at[26, 'mapped_colors']
+name27  = format_rating.at[27, 'format']
+color27 = format_rating.at[27, 'mapped_colors']
+name28  = format_rating.at[28, 'format']
+color28 = format_rating.at[28, 'mapped_colors']
+name29  = format_rating.at[29, 'format']
+color29 = format_rating.at[29, 'mapped_colors']
+name30  = format_rating.at[30, 'format']
+color30 = format_rating.at[30, 'mapped_colors']
+name31  = format_rating.at[31, 'format']
+color31 = format_rating.at[31, 'mapped_colors']
+name32  = format_rating.at[32, 'format']
+color32 = format_rating.at[32, 'mapped_colors']
+name33  = format_rating.at[33, 'format']
+color33 = format_rating.at[33, 'mapped_colors']
+name34  = format_rating.at[34, 'format']
+color34 = format_rating.at[34, 'mapped_colors']
+name35  = format_rating.at[35, 'format']
+color35 = format_rating.at[35, 'mapped_colors']
+name36  = format_rating.at[36, 'format']
+color36 = format_rating.at[36, 'mapped_colors']
+name37  = format_rating.at[37, 'format']
+color37 = format_rating.at[37, 'mapped_colors']
+name38  = format_rating.at[38, 'format']
+color38 = format_rating.at[38, 'mapped_colors']
+name39  = format_rating.at[39, 'format']
+color39 = format_rating.at[39, 'mapped_colors']
 
 
 #####################################   Pie Chart freq ####################################
@@ -444,7 +573,7 @@ st.text(' ')
 
 st.subheader('Top Formats')
 
-st.dataframe(format_rating)
+st.dataframe(full_format_rating)
 
 
 st.text(' ')
@@ -457,15 +586,15 @@ with st.container():
   st.markdown(
   f"""
   <div style='display: flex;'>
-      <div style='background-color:{color0}; width: {'100px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      <div style='background-color:{color0}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
       display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name0}</div>
-       <div style='background-color:{color1}; width: {'100px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+       <div style='background-color:{color1}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
       display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name1}</div>
-       <div style='background-color:{color2}; width: {'100px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+       <div style='background-color:{color2}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
       display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name2}</div>
-       <div style='background-color:{color3}; width: {'100px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+       <div style='background-color:{color3}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
       display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name3}</div>
-       <div style='background-color:{color4}; width: {'100px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+       <div style='background-color:{color4}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
       display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name4}</div>
   </div>
   """,
@@ -473,26 +602,149 @@ with st.container():
 )
 
 
-st.text(' ')
+
 
 with st.container():
   st.markdown(
   f"""
   <div style='display: flex;'>
-      <div style='background-color:{color5}; width: {'100px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      <div style='background-color:{color5}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
       display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name5}</div>
-      <div style='background-color:{color6}; width: {'100px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      <div style='background-color:{color6}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
       display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name6}</div>
-      <div style='background-color:{color7}; width: {'100px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      <div style='background-color:{color7}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
       display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name7}</div>
-      <div style='background-color:{color8}; width: {'100px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      <div style='background-color:{color8}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
       display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name8}</div>
-      <div style='background-color:{color9}; width: {'100px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      <div style='background-color:{color9}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
       display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name9}</div>
   </div>
   """,
   unsafe_allow_html=True
 )
+
+
+with st.container():
+  st.markdown(
+  f"""
+  <div style='display: flex;'>
+      <div style='background-color:{color10}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name10}</div>
+      <div style='background-color:{color11}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name11}</div>
+      <div style='background-color:{color12}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name12}</div>
+      <div style='background-color:{color13}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name13}</div>
+      <div style='background-color:{color14}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name14}</div>
+  </div>
+  """,
+  unsafe_allow_html=True
+)
+
+
+
+with st.container():
+  st.markdown(
+  f"""
+  <div style='display: flex;'>
+      <div style='background-color:{color15}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name15}</div>
+      <div style='background-color:{color16}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name16}</div>
+      <div style='background-color:{color17}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name17}</div>
+      <div style='background-color:{color18}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name18}</div>
+      <div style='background-color:{color19}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name19}</div>
+  </div>
+  """,
+  unsafe_allow_html=True
+)
+
+
+with st.container():
+  st.markdown(
+  f"""
+  <div style='display: flex;'>
+      <div style='background-color:{color20}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name20}</div>
+      <div style='background-color:{color21}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name21}</div>
+      <div style='background-color:{color22}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name22}</div>
+      <div style='background-color:{color23}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name23}</div>
+      <div style='background-color:{color24}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name24}</div>
+  </div>
+  """,
+  unsafe_allow_html=True
+)
+
+
+with st.container():
+  st.markdown(
+  f"""
+  <div style='display: flex;'>
+      <div style='background-color:{color25}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name25}</div>
+      <div style='background-color:{color26}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name26}</div>
+      <div style='background-color:{color27}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name27}</div>
+      <div style='background-color:{color28}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name28}</div>
+      <div style='background-color:{color29}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name29}</div>
+  </div>
+  """,
+  unsafe_allow_html=True
+)
+
+
+with st.container():
+  st.markdown(
+  f"""
+  <div style='display: flex;'>
+      <div style='background-color:{color30}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name30}</div>
+      <div style='background-color:{color31}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name31}</div>
+      <div style='background-color:{color32}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name32}</div>
+      <div style='background-color:{color33}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name33}</div>
+      <div style='background-color:{color34}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name34}</div>
+  </div>
+  """,
+  unsafe_allow_html=True
+)
+
+
+with st.container():
+  st.markdown(
+  f"""
+  <div style='display: flex;'>
+      <div style='background-color:{color35}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name35}</div>
+      <div style='background-color:{color36}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name36}</div>
+      <div style='background-color:{color37}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name37}</div>
+      <div style='background-color:{color38}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name38}</div>
+      <div style='background-color:{color39}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
+      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name39}</div>
+  </div>
+  """,
+  unsafe_allow_html=True
+)
+
+
 
 st.text(' ')
 
@@ -500,3 +752,26 @@ st.subheader('Budget Allocation')
 
 
 st.dataframe(df_allowance)
+
+st.text(' ')
+
+if input_budget == 0:
+  st.text('Awaiting for budget...')
+
+else: 
+
+  fig4, ax4 = plt.subplots()
+  ax4.pie(df_allowance['allowance'], labels=df_allowance['channel'], startangle=90, wedgeprops=dict(width=0.4), colors=custom_colors1, autopct='%1.1f%%', pctdistance=0.85,
+         textprops=dict(color="black"))
+  
+  
+  center_circle = plt.Circle((0,0), 0.7, fc='white')
+  fig4.gca().add_artist(center_circle)
+  
+  middle_text = ax4.text(0, 0, f"Total: {input_budget} USD", ha='center', va='center', fontsize=12, color='black', weight='bold')
+  
+  ax4.set_title('Budget Allocation')
+  
+  ax4.axis('equal')
+  
+  st.pyplot(fig4)
