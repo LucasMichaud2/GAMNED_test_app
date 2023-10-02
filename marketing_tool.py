@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
 
 
 objective_url = 'https://raw.githubusercontent.com/LucasMichaud2/GAMNED_test_app/main/Objectives_updated-Table%201.csv'
@@ -14,7 +15,39 @@ df_data = pd.read_csv(data_url)
 age_url = 'https://raw.githubusercontent.com/LucasMichaud2/GAMNED_test_app/main/Global_data-Table%201.csv'
 age_date = pd.read_csv(age_url)
 
+gamned_logo_url = 'https://raw.github.com/LucasMichaud2/GAMNED_test_app/main/Logo_G_Gamned_red_baseline.jpg'
 
+
+
+header_col1, header_col2 = st.columns(2)
+
+with header_col1:
+  st.image(gamned_logo_url)
+
+with header_col2:
+  st.text(' ')
+  st.text(' ')
+  st.text(' ')
+  st.text(' ')
+  st.text(' ')
+  st.text(' ')
+  st.text(' ')
+  st.text(' ')
+  st.text(' ')
+  st.text(' ')
+  st.text(' ')
+  st.text(' ')
+  st.text(' ')
+  st.text(' ')
+  st.text(' ')
+  st.text(' ')
+  st.text(' ')
+  st.text(' ')
+  
+ 
+  st.title('Marketing Tool')
+
+  
 
 class GAMNED_UAE:
 
@@ -232,9 +265,7 @@ objective_df = pd.DataFrame(objective_list)
 target_list = ['b2c', 'b2b']
 target_df = pd.DataFrame(target_list)
 
-st.title('GAMNED Marketing Tool')
 st.text(' ')
-st.subheader('Frequently Used')
 st.sidebar.title('Heatmap Parameters')
 
 selected_objective = st.sidebar.selectbox('Select an objective', objective_df)
@@ -264,8 +295,7 @@ df_rating3 = gamned_class.get_objective(selected_objective, df_rating2)
 full_format_rating = df_rating3.copy()
 format_rating = df_rating3.copy()
 format_rating['format'] = format_rating['channel'] + ' - ' + format_rating['formats']
-format_rating = format_rating.drop(['formats'], axis=1)
-format_rating = format_rating[['channel', 'format', selected_objective]]
+format_rating = format_rating[['channel', 'formats', 'format', selected_objective]]
 min_format = full_format_rating[selected_objective].min()
 max_format = full_format_rating[selected_objective].max()
 format_rating['norm'] = (format_rating[selected_objective] - min_format) / (max_format - min_format)*100
@@ -273,6 +303,14 @@ format_rating['norm'] = format_rating['norm'].apply(round_5)
 format_rating['mapped_colors'] = format_rating['norm'].map(color_dictionary)
 format_rating = format_rating.reset_index()
 format_rating = format_rating.drop(['index'], axis=1)
+column_format_drop = ['format', 'norm', 'mapped_colors']
+displayed_format = format_rating.drop(columns=column_format_drop)
+
+################################# Second heatmap #######################################
+
+second_heatmap = format_rating.head(36)
+heatmap_data = second_heatmap['norm']
+heatmap_labels = second_heatmap['format']
 
 ################################## Computing Scores ###################################
 
@@ -289,10 +327,13 @@ channel_count2 = channel_count.sort_values(by='channel')
 agg_rating2['average'] = agg_rating2[selected_objective] / channel_count2['count']
 agg_rating3 = agg_rating2.sort_values(by='average', ascending=False)
 cost_rating = agg_rating3.copy()
+agg_rating4 = agg_rating3.copy()
 agg_rating_min = agg_rating3['average'].min()
 agg_rating_max = agg_rating3['average'].max()
 agg_rating3['average'] = ((agg_rating3['average'] - agg_rating_min) / (agg_rating_max - agg_rating_min))*100
 output_rating = agg_rating3.copy()
+
+
                         
 
 #################################### Building Heatmap ####################################
@@ -309,15 +350,15 @@ heat_map2 = heat_map.head(10)
 
 ##################################### Max Channel Budget ##################################
 
-max_display = 5000
-max_inread_video = 5000
-max_youtube = 4000
-max_facebook = 4000
-max_tiktok = 4000
-max_instagram = 3000
-max_linkedin = 4000
-max_snapchat = 3000
-max_search = 1000
+min_display = 5000
+min_inread_video = 5000
+min_youtube = 4000
+min_facebook = 4000
+min_tiktok = 4000
+min_instagram = 3000
+min_linkedin = 4000
+min_snapchat = 3000
+min_search = 1000
 
 ##################################### Buidling Budget #####################################
 
@@ -327,6 +368,7 @@ cost_rating = cost_rating.reset_index()
 cost_rating_std = cost_rating['average'].std()
 cost_rating_mean = cost_rating['average'].mean()
 cost_rating['norm'] = (cost_rating['average'] - cost_rating_mean) / cost_rating_std
+df_price_rating = cost_rating.copy()
 threshold = cost_rating['norm'].max() - 0.50*cost_rating['norm'].max()
 
 # df_allowance now contains the DataFrame with the specified columns dropped
@@ -354,7 +396,7 @@ if channel_number == 0:
     columns_to_drop = ['average', 'index', 'norm', 'distribution']
     df_allowance = df_budget.drop(columns=columns_to_drop)
     
-  elif input_budget < 10001 and input_budget < 5001:
+  elif input_budget < 10001 and input_budget > 5000:
     df_selection = cost_rating.head(2)
     df_budget = df_selection.copy()
     average_max = df_budget['average'].max()
@@ -366,8 +408,9 @@ if channel_number == 0:
     columns_to_drop = ['average', 'index', 'norm', 'distribution']
     df_allowance = df_budget.drop(columns=columns_to_drop)
 
-  else:
-    df_selection = cost_rating[cost_rating['norm'] > threshold]
+  elif input_budget < 15001 and input_budget > 10000:
+    #df_selection = cost_rating[cost_rating['norm'] > threshold]
+    df_selection = cost_rating.head(3)
     df_budget = df_selection.copy()
     average_max = df_budget['average'].max()
     average_min = df_budget['average'].min()
@@ -378,22 +421,68 @@ if channel_number == 0:
     columns_to_drop = ['average', 'index', 'norm', 'distribution']
     df_allowance = df_budget.drop(columns=columns_to_drop)
 
+
+  elif input_budget < 20001 and input_budget > 15000:
+    #df_selection = cost_rating[cost_rating['norm'] > threshold]
+    df_selection = cost_rating.head(4)
+    df_budget = df_selection.copy()
+    average_max = df_budget['average'].max()
+    average_min = df_budget['average'].min()
+    average_diff = average_max - average_min
+    df_budget['distribution'] = df_budget['average'] / df_budget['average'].sum()
+    df_budget['distribution'] = df_budget['distribution'].apply(lambda x: round(x, 2))
+    df_budget['allowance'] = input_budget * df_budget['distribution']
+    columns_to_drop = ['average', 'index', 'norm', 'distribution']
+    df_allowance = df_budget.drop(columns=columns_to_drop)
+
+  elif input_budget < 25001 and input_budget > 20000:
+    #df_selection = cost_rating[cost_rating['norm'] > threshold]
+    df_selection = cost_rating.head(5)
+    df_budget = df_selection.copy()
+    average_max = df_budget['average'].max()
+    average_min = df_budget['average'].min()
+    average_diff = average_max - average_min
+    df_budget['distribution'] = df_budget['average'] / df_budget['average'].sum()
+    df_budget['distribution'] = df_budget['distribution'].apply(lambda x: round(x, 2))
+    df_budget['allowance'] = input_budget * df_budget['distribution']
+    columns_to_drop = ['average', 'index', 'norm', 'distribution']
+    df_allowance = df_budget.drop(columns=columns_to_drop)
+
+  else:
+    df_selection = cost_rating.head(6)
+    df_budget = df_selection.copy()
+    average_max = df_budget['average'].max()
+    average_min = df_budget['average'].min()
+    average_diff = average_max - average_min
+    df_budget['distribution'] = df_budget['average'] / df_budget['average'].sum()
+    df_budget['distribution'] = df_budget['distribution'].apply(lambda x: round(x, 2))
+    df_budget['allowance'] = input_budget * df_budget['distribution']
+    columns_to_drop = ['average', 'index', 'norm', 'distribution']
+    df_allowance = df_budget.drop(columns=columns_to_drop)
+    
 else:
   df_selection = cost_rating.head(channel_number)
-  st.dataframe(df_selection)
   df_budget = df_selection.copy()
-  st.dataframe(df_budget)
   average_max = df_budget['average'].max()
   average_min = df_budget['average'].min()
   average_diff = average_max - average_min
   df_budget['distribution'] = df_budget['average'] / df_budget['average'].sum()
   df_budget['distribution'] = df_budget['distribution'].apply(lambda x: round(x, 2))
   df_budget['allowance'] = input_budget * df_budget['distribution']
-  st.dataframe(df_budget)
   columns_to_drop = ['average', 'index', 'norm', 'distribution']
   df_allowance = df_budget.drop(columns=columns_to_drop)
-  st.dataframe(df_allowance)
-  
+
+
+
+#################################### First Bubble Chart ###################################
+
+merged_df = agg_rating4.merge(df_allowance, on='channel', how='inner')
+merged_df[selected_objective] = merged_df[selected_objective].apply(lambda x: round(x, 1))
+merged_df['average'] = merged_df['average'].apply(lambda x: round(x, 1))
+merged_df['average'] = merged_df['average'] * 5 / 25
+merged_df[selected_objective] = merged_df[selected_objective] * 5 / 150
+                                                                    
+
 
 
 
@@ -505,273 +594,336 @@ df_freq['consideration'] = df_freq['consideration'].round(1)
 df_freq['conversion'] = df_freq['conversion'].round(1)
 
 
-
-df_brand = df_freq[['channel', 'branding']]
-df_brand = df_brand.dropna()
-df_cons = df_freq[['channel', 'consideration']]
-df_cons = df_cons.dropna()
-df_conv = df_freq[['channel', 'conversion']]
-df_conv = df_conv.dropna()
-custom_colors1 = sns.color_palette('Blues', n_colors=len(df_brand))
-custom_colors2 = sns.color_palette('Purples', n_colors=len(df_cons))
-custom_colors3 = sns.color_palette('Reds', n_colors=len(df_conv))
+st.text(' ')
 
 
+styled_df_html = displayed_format.to_html(classes='styled-dataframe', escape=False)
 
-pie1, pie2, pie3 = st.columns(3)
+# Create a scrollable table using HTML and CSS
+scrollable_table = f"""
+    <div style="height: 300px; overflow: auto;">
+        {styled_df_html}
+    </div>
+"""
 
-with pie1:
+# Display the scrollable table
+st.title("Top Formats")
+st.markdown(scrollable_table, unsafe_allow_html=True)
 
-  fig1, ax1 = plt.subplots()
-  ax1.pie(df_brand['branding'], labels=df_brand['channel'], autopct='%1.1f%%', startangle=90, colors=custom_colors1)
-  ax1.axis('equal')
-  st.pyplot(fig1)
-  st.markdown(
-        """
-        <div style="display: flex; justify-content: center;">
-            <p style="text-align: center;">Branding</p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-  
 
-with pie2:
-  
-  fig2, ax2 = plt.subplots()
-  ax2.pie(df_cons['consideration'], labels=df_cons['channel'], autopct='%1.1f%%', startangle=90, colors=custom_colors2)
-  ax2.axis('equal')
-  st.pyplot(fig2)
-  st.markdown(
-        """
-        <div style="display: flex; justify-content: center;">
-            <p style="text-align: center;">Consideration</p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+st.text(' ')
 
-with pie3:
-  
-  fig3, ax3 = plt.subplots()
-  ax3.pie(df_conv['conversion'], labels=df_conv['channel'], autopct='%1.1f%%', startangle=90, colors=custom_colors3)
-  ax3.axis('equal')
-  st.pyplot(fig3)
-  st.markdown(
-        """
-        <div style="display: flex; justify-content: center;">
-            <p style="text-align: center;">Conversion</p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+st.title("Heatmap")
 
+heatmap_size = 6
+heatmap_data = heatmap_data.reset_index()
+data_matrix = heatmap_data["norm"].values.reshape(heatmap_size, heatmap_size)
+plt.figure(figsize=(25, 25))
+sns.heatmap(data_matrix, cmap="flare", annot=False, xticklabels=False, yticklabels=False, cbar=False)
+for i in range(heatmap_size):
+  for j in range(heatmap_size):
+    label = format_rating.at[i+j, 'channel'] + '\n' + '\n' + format_rating.at[i+j, 'formats']
+    font_prop = fm.FontProperties(weight='bold', size=17)
+    plt.text(j + 0.5, i + 0.5, label, ha='center', color='white', fontsize=17, fontproperties=font_prop)
+    
+st.pyplot(plt)
 
 
 
 st.text(' ')
 
-st.subheader('Top Formats')
+st.title('Budget Allocation')
 
-st.dataframe(full_format_rating)
+budget_column1, budget_column2 = st.columns(2)
 
+
+
+with budget_column1:
+  
+  st.dataframe(df_allowance)
+
+custom_colors1 = sns.color_palette('Blues', n_colors=len(df_allowance))
+
+with budget_column2:
+
+  if input_budget == 0:
+    st.text('Awaiting for budget...')
+
+  else: 
+  
+    fig4, ax4 = plt.subplots()
+    ax4.pie(df_allowance['allowance'], labels=df_allowance['channel'], startangle=90, wedgeprops=dict(width=0.4), colors=custom_colors1, autopct='%1.1f%%', pctdistance=0.85,
+           textprops=dict(color="black"))
+    
+    
+    center_circle = plt.Circle((0,0), 0.7, fc='white')
+    fig4.gca().add_artist(center_circle)
+    
+    middle_text = ax4.text(0, 0, f"Total: {input_budget} USD", ha='center', va='center', fontsize=12, color='black', weight='bold')
+    
+    ax4.axis('equal')
+    
+    st.pyplot(fig4)
 
 st.text(' ')
 
-st.subheader("Heatmap")
+sns.set_palette("Set1")
 
 
 
-with st.container():
-  st.markdown(
-  f"""
-  <div style='display: flex;'>
-      <div style='background-color:{color0}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name0}</div>
-       <div style='background-color:{color1}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name1}</div>
-       <div style='background-color:{color2}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name2}</div>
-       <div style='background-color:{color3}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name3}</div>
-       <div style='background-color:{color4}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name4}</div>
-  </div>
-  """,
-  unsafe_allow_html=True
-)
+#df_bubble['average'] = df_bubble['average'] * 5 / 25
 
+if input_budget != 0:
+  
+  plt.figure(figsize=(8, 6))
+  ax = sns.scatterplot(data=merged_df, x='average', y=selected_objective, size='allowance', sizes=(10, 10000), alpha=1.0, legend=False, hue=merged_df['channel'])
+  
+  for index, row in merged_df.iterrows():
+    label = row['channel']  # Get the label from the 'label' column
+    ax.annotate(label, (row['average'], row[selected_objective]), fontsize=12, ha='center')
 
+  plt.xlim(merged_df['average'].min() - 0.5, merged_df['average'].max() + 0.5)
+  plt.ylim(merged_df[selected_objective].min() - 0.5, merged_df[selected_objective].max() + 0.5)
+  plt.gcf().set_facecolor('none')
+  st.pyplot(plt)
 
-
-with st.container():
-  st.markdown(
-  f"""
-  <div style='display: flex;'>
-      <div style='background-color:{color5}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name5}</div>
-      <div style='background-color:{color6}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name6}</div>
-      <div style='background-color:{color7}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name7}</div>
-      <div style='background-color:{color8}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name8}</div>
-      <div style='background-color:{color9}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name9}</div>
-  </div>
-  """,
-  unsafe_allow_html=True
-)
-
-
-with st.container():
-  st.markdown(
-  f"""
-  <div style='display: flex;'>
-      <div style='background-color:{color10}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name10}</div>
-      <div style='background-color:{color11}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name11}</div>
-      <div style='background-color:{color12}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name12}</div>
-      <div style='background-color:{color13}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name13}</div>
-      <div style='background-color:{color14}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name14}</div>
-  </div>
-  """,
-  unsafe_allow_html=True
-)
-
-
-
-with st.container():
-  st.markdown(
-  f"""
-  <div style='display: flex;'>
-      <div style='background-color:{color15}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name15}</div>
-      <div style='background-color:{color16}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name16}</div>
-      <div style='background-color:{color17}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name17}</div>
-      <div style='background-color:{color18}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name18}</div>
-      <div style='background-color:{color19}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name19}</div>
-  </div>
-  """,
-  unsafe_allow_html=True
-)
-
-
-with st.container():
-  st.markdown(
-  f"""
-  <div style='display: flex;'>
-      <div style='background-color:{color20}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name20}</div>
-      <div style='background-color:{color21}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name21}</div>
-      <div style='background-color:{color22}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name22}</div>
-      <div style='background-color:{color23}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name23}</div>
-      <div style='background-color:{color24}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name24}</div>
-  </div>
-  """,
-  unsafe_allow_html=True
-)
-
-
-with st.container():
-  st.markdown(
-  f"""
-  <div style='display: flex;'>
-      <div style='background-color:{color25}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name25}</div>
-      <div style='background-color:{color26}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name26}</div>
-      <div style='background-color:{color27}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name27}</div>
-      <div style='background-color:{color28}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name28}</div>
-      <div style='background-color:{color29}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name29}</div>
-  </div>
-  """,
-  unsafe_allow_html=True
-)
-
-
-with st.container():
-  st.markdown(
-  f"""
-  <div style='display: flex;'>
-      <div style='background-color:{color30}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name30}</div>
-      <div style='background-color:{color31}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name31}</div>
-      <div style='background-color:{color32}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name32}</div>
-      <div style='background-color:{color33}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name33}</div>
-      <div style='background-color:{color34}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name34}</div>
-  </div>
-  """,
-  unsafe_allow_html=True
-)
-
-
-with st.container():
-  st.markdown(
-  f"""
-  <div style='display: flex;'>
-      <div style='background-color:{color35}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name35}</div>
-      <div style='background-color:{color36}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name36}</div>
-      <div style='background-color:{color37}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name37}</div>
-      <div style='background-color:{color38}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name38}</div>
-      <div style='background-color:{color39}; width: {'140px'}; height: {'75px'}; margin-riht: {'50px'}; font-size:{'10px'};
-      display: flex; align-items: {'center'}; justify-content: {'center'}; border-radius: {'20px'}; color: white;'>{name39}</div>
-  </div>
-  """,
-  unsafe_allow_html=True
-)
-
-
+             
+ 
+else:
+  st.text('Waiting for budget')
 
 st.text(' ')
 
-st.subheader('Budget Allocation')
 
 
-st.dataframe(df_allowance)
+#################################### Bubble graph test #################################
 
-st.text(' ')
 
-if input_budget == 0:
-  st.text('Awaiting for budget...')
 
-else: 
 
-  fig4, ax4 = plt.subplots()
-  ax4.pie(df_allowance['allowance'], labels=df_allowance['channel'], startangle=90, wedgeprops=dict(width=0.4), colors=custom_colors1, autopct='%1.1f%%', pctdistance=0.85,
-         textprops=dict(color="black"))
+
+
+################################ Cost Test ############################################
+
+col1, col2, col3, col4, col5, col6 = st.columns(6)
+
+with col1:
   
+  price_youtube = st.number_input('Youtube $', step=0.1, value=1.0)
+  price_nativead = st.number_input('Native Ads $', step=0.1, value=1.0)
+
+with col2:
+
+  price_display = st.number_input('Display $', step=0.1,  value=1.0)
+  price_amazon = st.number_input('Amazon $', step=0.1, value=1.0)
+
+with col3:
+
   
-  center_circle = plt.Circle((0,0), 0.7, fc='white')
-  fig4.gca().add_artist(center_circle)
+  price_instagram = st.number_input('Instagram $', step=0.1, value=1.0)
+  price_tiktok = st.number_input('TikTok $', step=0.1, value=1.0)
   
-  middle_text = ax4.text(0, 0, f"Total: {input_budget} USD", ha='center', va='center', fontsize=12, color='black', weight='bold')
+
+with col4:
+
+  price_facebook = st.number_input('Facebook $', step=0.1, value=1.0)
+  price_twitter = st.number_input('Twitter $', step=0.1, value=1.0)
   
-  ax4.set_title('Budget Allocation')
+
+with col5:
   
-  ax4.axis('equal')
+  price_linkedin = st.number_input('Linkedin $', step=0.1, value=1.0)
+  price_connectedtv = st.number_input('Connected TV $', step=0.1,  value=1.0)
+
+with col6:
+
+  price_search = st.number_input('Search $', step=0.1, value=1.0)
+  price_snapchat = st.number_input('Snapchat $', step=0.1, value=1.0)
+
+pcol1, pcol2, pcol3, pcol4, pcol5 = st.columns(5)
+
+with pcol1:
+
+  price_gamead = st.number_input('In game ad $', step=0.1, value=1.0)
+
+with pcol2:
+
+  price_twitch = st.number_input('Twitch $', step=0.1, value=1.0)
+
+with pcol3:
+
+  price_dooh = st.number_input('DOOH $', step=0.1, value=1.0)
+
+with pcol4:
+
+  price_audio = st.number_input('Audio $', step=0.1, value=1.0)
+
+with pcol5:
+
+  price_waze = st.number_input('Waze $', step=0.1, value=1.0)
+
+
+###################################### Creating Dictinary ###################################
+
+price_dict = {
+  'youtube': price_youtube, 'display': price_display, 'instagram': price_instagram, 'facebook': price_facebook,
+  'linkedin': price_linkedin, 'search': price_search, 'native ads': price_nativead, 'amazon': price_amazon,
+  'tiktok': price_tiktok, 'twitter': price_twitter, 'connected tv': price_connectedtv, 'snapchat': price_snapchat,
+  'in game advertising': price_gamead, 'twitch': price_twitch, 'dooh': price_dooh, 'audio': price_audio,
+  'waze': price_waze
+}
+
+######################################## Mapping prices #####################################
+
+df_price_rating['price'] = df_price_rating['channel'].map(price_dict)
+df_price_rating = df_price_rating.drop(['norm'], axis=1)
+df_price_rating['average'] = df_price_rating['average'].apply(lambda x: round(x, 2))
+def square_value(x):
+    return x ** 2
+
+df_price_rating['Squared Average'] = df_price_rating['average'].apply(square_value)
+df_price_rating['ratio'] = df_price_rating['Squared Average'] / df_price_rating['price']
+df_price_rating = df_price_rating.sort_values(by='ratio', ascending=False)
+
+
+
+
+
+######################################## Making the allowance ################################
+
+if channel_number == 0:
+  if input_budget < 5001 and selected_objective == 'consideration':
+    disp_allow2 = input_budget - 500
+    budget_lib2 = {
+      'channel': ['display', 'search'],
+      'allowance': [disp_allow2, 500]
+    }
+    df_allowance2 = pd.DataFrame(budget_lib2)
+    
+  elif input_budget < 5001:
+    df_selection2 = df_price_rating.head(1)
+    df_budget2 = df_selection2.copy()
+    ratio_max = df_budget2['ratio'].max()
+    ratio_min = df_budget2['ratio'].min()
+    ratio_diff = ratio_max - ratio_min
+    df_budget2['distribution'] = df_budget2['ratio'] / df_budget2['ratio'].sum()
+    df_budget2['distribution'] = df_budget2['distribution'].apply(lambda x: round(x, 2))
+    df_budget2['allowance'] = input_budget * df_budget2['distribution']
+    df_bubble = df_budget2.copy()
+    columns_to_drop2 = ['average', 'index', 'Squared Average', 'ratio', 'distribution']
+    df_allowance2 = df_budget2.drop(columns=columns_to_drop2)
+
+  elif input_budget < 10001 and input_budget > 5000:
+    df_selection2 = df_price_rating.head(2)
+    df_budget2 = df_selection2.copy()
+    ratio_max = df_budget2['ratio'].max()
+    ratio_min = df_budget2['ratio'].min()
+    ratio_diff = ratio_max - ratio_min
+    df_budget2['distribution'] = df_budget2['ratio'] / df_budget2['ratio'].sum()
+    df_budget2['distribution'] = df_budget2['distribution'].apply(lambda x: round(x, 2))
+    df_budget2['allowance'] = input_budget * df_budget2['distribution']
+    df_bubble = df_budget2.copy()
+    columns_to_drop2 = ['average', 'index', 'Squared Average', 'ratio', 'distribution']
+    df_allowance2 = df_budget2.drop(columns=columns_to_drop2)
+
+  elif input_budget < 15001 and input_budget > 10000:
+    df_selection2 = df_price_rating.head(3)
+    df_budget2 = df_selection2.copy()
+    ratio_max = df_budget2['ratio'].max()
+    ratio_min = df_budget2['ratio'].min()
+    ratio_diff = ratio_max - ratio_min
+    df_budget2['distribution'] = df_budget2['ratio'] / df_budget2['ratio'].sum()
+    df_budget2['distribution'] = df_budget2['distribution'].apply(lambda x: round(x, 2))
+    df_budget2['allowance'] = input_budget * df_budget2['distribution']
+    df_bubble = df_budget2.copy()
+    columns_to_drop2 = ['average', 'index', 'Squared Average', 'ratio', 'distribution']
+    df_allowance2 = df_budget2.drop(columns=columns_to_drop2)
+
+  elif input_budget < 20001 and input_budget > 15000:
+    df_selection2 = df_price_rating.head(4)
+    df_budget2 = df_selection2.copy()
+    ratio_max = df_budget2['ratio'].max()
+    ratio_min = df_budget2['ratio'].min()
+    ratio_diff = ratio_max - ratio_min
+    df_budget2['distribution'] = df_budget2['ratio'] / df_budget2['ratio'].sum()
+    df_budget2['distribution'] = df_budget2['distribution'].apply(lambda x: round(x, 2))
+    df_budget2['allowance'] = input_budget * df_budget2['distribution']
+    df_bubble = df_budget2.copy()
+    columns_to_drop2 = ['average', 'index', 'Squared Average', 'ratio', 'distribution']
+    df_allowance2 = df_budget2.drop(columns=columns_to_drop2)
+
+  elif input_budget < 25001 and input_budget > 15000:
+    df_selection2 = df_price_rating.head(5)
+    df_budget2 = df_selection2.copy()
+    ratio_max = df_budget2['ratio'].max()
+    ratio_min = df_budget2['ratio'].min()
+    ratio_diff = ratio_max - ratio_min
+    df_budget2['distribution'] = df_budget2['ratio'] / df_budget2['ratio'].sum()
+    df_budget2['distribution'] = df_budget2['distribution'].apply(lambda x: round(x, 2))
+    df_budget2['allowance'] = input_budget * df_budget2['distribution']
+    df_bubble = df_budget2.copy()
+    columns_to_drop2 = ['average', 'index', 'Squared Average', 'ratio', 'distribution']
+    df_allowance2 = df_budget2.drop(columns=columns_to_drop2)
+
+  else:
+    df_selection2 = df_price_rating.head(6)
+    df_budget2 = df_selection2.copy()
+    ratio_max = df_budget2['ratio'].max()
+    ratio_min = df_budget2['ratio'].min()
+    ratio_diff = ratio_max - ratio_min
+    df_budget2['distribution'] = df_budget2['ratio'] / df_budget2['ratio'].sum()
+    df_budget2['distribution'] = df_budget2['distribution'].apply(lambda x: round(x, 2))
+    df_budget2['allowance'] = input_budget * df_budget2['distribution']
+    df_bubble = df_budget2.copy()
+    columns_to_drop2 = ['average', 'index', 'Squared Average', 'ratio', 'distribution']
+    df_allowance2 = df_budget2.drop(columns=columns_to_drop2)
   
-  st.pyplot(fig4)
+    
+else:
+  df_selection2 = df_price_rating.head(channel_number)
+  df_budget2 = df_selection2.copy()
+  ratio_max = df_budget2['ratio'].max()
+  ratio_min = df_budget2['ratio'].min()
+  ratio_diff = ratio_max - ratio_min
+  df_budget2['distribution'] = df_budget2['ratio'] / df_budget2['ratio'].sum()
+  df_budget2['distribution'] = df_budget2['distribution'].apply(lambda x: round(x, 2))
+  df_budget2['allowance'] = input_budget * df_budget2['distribution']
+  df_bubble = df_budget2.copy()
+  columns_to_drop2 = ['average', 'index', 'Squared Average', 'ratio', 'distribution']
+  df_allowance2 = df_budget2.drop(columns=columns_to_drop2)
+
+
+st.title('Pricing Optimization')
+
+  
+st.dataframe(df_allowance2)
+
+######################################## bubble chart ##########################################
+
+
+sns.set_palette("Spectral")
+
+column_budget_drop = ['index', 'ratio', 'distribution']
+df_bubble = df_bubble.drop(columns=column_budget_drop)
+df_bubble['average'] = df_bubble['average'] * 5 / 25
+df_bubble['price'] = 1 / df_bubble['price']
+
+
+if input_budget != 0:
+  df_bubble['allowance'] = df_bubble['allowance']
+  plt.figure(figsize=(8, 6))
+  ax = sns.scatterplot(data=df_bubble, x='average', y='price', size='allowance', sizes=(10, 10000), alpha=1.0, legend=False, hue=df_bubble['channel'])
+  
+  for index, row in df_bubble.iterrows():
+    label = row['channel']  # Get the label from the 'label' column
+    ax.annotate(label, (row['average'], row['price']), fontsize=12, ha='center')
+
+  plt.xlim(df_bubble['average'].min() - 0.5, df_bubble['average'].max() + 0.5)
+  plt.ylim(df_bubble['price'].min() - 0.5, df_bubble['price'].max() + 0.5)
+  plt.gcf().set_facecolor('none')
+  st.pyplot(plt)
+
+             
+
+else:
+  st.text('Waiting for budget')
