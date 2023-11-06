@@ -4,50 +4,110 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
+from streamlit_elements import elements, mui, html, nivo, dashboard
+import plotly.graph_objects as go
+import plotly.express as px
+
+############################### Design Elements ###########################################################################################
 
 
-objective_url = 'https://raw.githubusercontent.com/LucasMichaud2/GAMNED_test_app/main/Objectives_updated-Table%201.csv'
-df_objective = pd.read_csv(objective_url)
-
-data_url =  'https://raw.githubusercontent.com/LucasMichaud2/GAMNED_test_app/main/GAMNED_dataset_V2.2.csv'
-df_data = pd.read_csv(data_url)
-
-age_url = 'https://raw.githubusercontent.com/LucasMichaud2/GAMNED_test_app/main/Global_data-Table%201.csv'
-age_date = pd.read_csv(age_url)
-
-gamned_logo_url = 'https://raw.github.com/LucasMichaud2/GAMNED_test_app/main/Logo_G_Gamned_red_baseline.jpg'
-
-
-
-header_col1, header_col2 = st.columns(2)
-
-with header_col1:
-  st.image(gamned_logo_url)
-
-with header_col2:
-  st.text(' ')
-  st.text(' ')
-  st.text(' ')
-  st.text(' ')
-  st.text(' ')
-  st.text(' ')
-  st.text(' ')
-  st.text(' ')
-  st.text(' ')
-  st.text(' ')
-  st.text(' ')
-  st.text(' ')
-  st.text(' ')
-  st.text(' ')
-  st.text(' ')
-  st.text(' ')
-  st.text(' ')
-  st.text(' ')
-  
+st.set_page_config(layout='wide')
  
-  st.title('Marketing Tool')
+custom_css = """
+<style>
+    body {
+        background-color: #F0E68C; /* Replace with your desired background color */
+    }
+</style>
+"""
 
+st.markdown(custom_css, unsafe_allow_html=True)
+st.markdown('<link rel="stylesheet.css" type="text/css" href="styles.css">', unsafe_allow_html=True)
+
+############################### Imports ###################################################################################################
+
+def import_url():
   
+  gamned_logo_url = 'https://raw.github.com/LucasMichaud2/GAMNED_test_app/main/Logo_Gamned_word_red.png'
+  
+  objective_url = 'https://raw.github.com/LucasMichaud2/GAMNED_test_app/main/format_table_last.csv'
+  df_objective = pd.read_csv(objective_url)
+
+  data_url = 'https://raw.github.com/LucasMichaud2/GAMNED_test_app/main/GAMNED_dataset_V2.2.csv'
+  df_data = pd.read_csv(data_url)
+
+  age_url = 'https://raw.github.com/LucasMichaud2/GAMNED_test_app/main/Global_data-Table%201.csv'
+  age_date = pd.read_csv(age_url)
+
+  weighted_country_url = 'https://raw.github.com/LucasMichaud2/GAMNED_test_app/main/weighted_country.csv'
+  weighted_country = pd.read_csv(weighted_country_url)
+
+  return gamned_logo_url, df_objective, df_data, age_date, weighted_country
+
+
+gamned_logo_url, df_objective, df_data, age_date, weighted_country = import_url()
+
+############################## Title Layer #######################################
+
+col1, col2 = st.columns(2)
+
+col1.image(gamned_logo_url, use_column_width=True)
+
+col2.write(' ')
+col2.write(' ')
+col2.write(' ')
+col2.write(' ')
+col2.write(' ')
+col2.subheader('Marketing Tool', divider='grey')
+
+############################# Input Layer #######################################
+
+def input_layer():
+
+  target_list = ['b2c', 'b2b']
+  target_df = pd.DataFrame(target_list)
+  
+  objective_list = ['branding display', 'branding video', 'consideration', 'conversion']
+  objective_df = pd.DataFrame(objective_list)
+  #objective_df.columns = ['0']
+  objective_df[0] = objective_df[0].str.title()
+  
+  age_list = ['13-17', '18-24', '25-34', '35-44', '45-54', '55-64', '65+', 'all']
+  age_df = pd.DataFrame(age_list)
+  
+  country_list = ['None', 'GCC', 'KSA', 'UAE', 'KUWAIT', 'BAHRAIN', 'QATAR', 'OMAN']
+  country_df = pd.DataFrame(country_list)
+  
+  excluded_channel_list = ['youtube', 'instagram', 'display', 'facebook', 'linkedin', 'search', 'snapchat', 'tiktok', 'native ads', 'twitter', 'twitch',
+                      'in game advertising', 'amazon', 'audio', 'waze', 'dooh', 'connected tv']
+
+  excluded_channel_list = [' '.join([word.capitalize() for word in item.split()]) for item in excluded_channel_list]
+  
+  box1, box2, box3, box4, box5, box6, box7 = st.columns(7)
+  
+  selected_objective = box1.selectbox('Objective', objective_df)
+  selected_target = box2.selectbox('Target', target_df)
+  selected_region = box3.selectbox('Region', country_df)
+  excluded_channel = box4.multiselect('Channel to Exclude', excluded_channel_list)
+  selected_age = box5.multiselect('Age', age_df)
+  selected_age = ', '.join(selected_age)
+  input_budget = box6.number_input('Budget $', value=0)
+  channel_number = box7.number_input('Channel Number', value=0)
+  search = st.checkbox('Include Search')
+  
+
+  return selected_objective, selected_target, selected_region, excluded_channel, selected_age, input_budget, channel_number, search
+
+selected_objective, selected_target, selected_region, excluded_channel, selected_age, input_budget, channel_number, search = input_layer()
+
+selected_objective = selected_objective.lower()
+
+excluded_channel = [item.lower() for item in excluded_channel]
+
+st.subheader(' ', divider='grey')
+
+
+############################## Class Import ##############################################################################################
 
 class GAMNED_UAE:
 
@@ -220,8 +280,20 @@ class GAMNED_UAE:
 
   def get_objective(self, input_obj, df_rating):
 
-    df_heatmap = df_rating[['channel', 'formats', input_obj]]
-    df_heatmap = df_heatmap.sort_values(by=input_obj, ascending=False)
+      
+    if input_obj == 'branding display':
+        df_rating.loc[df_rating['branding video'] == 0, 'branding'] += 10
+        df_heatmap = df_rating[['channel', 'formats', 'branding']]
+        df_heatmap = df_heatmap.sort_values(by='branding', ascending=False)
+
+    elif input_obj == 'branding video':
+        df_rating.loc[df_rating['branding video'] == 1, 'branding'] += 10
+        df_heatmap = df_rating[['channel', 'formats', 'branding']]
+        df_heatmap = df_heatmap.sort_values(by='branding', ascending=False)
+
+    else:
+        df_heatmap = df_rating[['channel', 'formats', input_obj]]
+        df_heatmap = df_heatmap.sort_values(by=input_obj, ascending=False)
     return df_heatmap
 
 
@@ -245,685 +317,682 @@ class GAMNED_UAE:
 
       return total_rating
 
-def round_5(x): 
-  return round(x/5) * 5
+##################################################### min price ##################################################################
 
-color_dictionary = {
-    0: '#F1C40F', 5: '#F4D03F', 10: '#F7DC6F', 15: '#F9E79F', 20: '#FAD7A0',
-    25: '#F8C471', 30: '#F5B041', 35: '#F39C12', 40: '#E67E22', 45: '#D35400',
-    50: '#EC7063', 55: '#E74C3C', 60: '#CB4335', 65: '#B03A2E', 70: '#943126',
-    75: '#78281F', 80: '#8E44AD', 85: '#7D3C98', 90: '#6C3483', 95: '#5B2C6F',
-    100: '#4A235A'
+min_price = {
+    'channel': ['youtube', 'instagram', 'display', 'facebook', 'linkedin', 'search', 'snapchat', 'tiktok', 'native ads', 'twitter', 'twitch',
+                      'in game advertising', 'amazon', 'audio', 'waze', 'dooh', 'connected tv'],
+    'minimum': ['4000', '3000', '5000', '4000', '4000', '1000', '3000', '4000', '4000', '3000', '3000', '3000', '3000', '3000', '3000',
+                 '3000', '3000']
 }
 
-age_list = ['13-17', '18-24', '25-34', '35-44', '45-54', '55-64', '65+', 'all']
-age_df = pd.DataFrame(age_list)
-
-objective_list = ['branding', 'consideration', 'conversion']
-objective_df = pd.DataFrame(objective_list)
-
-target_list = ['b2c', 'b2b']
-target_df = pd.DataFrame(target_list)
-
-st.text(' ')
-st.sidebar.title('Heatmap Parameters')
-
-selected_objective = st.sidebar.selectbox('Select an objective', objective_df)
-selected_age = st.sidebar.multiselect("Select an age", age_df)
-selected_age = ', '.join(selected_age)
-selected_target = st.sidebar.selectbox('Select target', target_df)
-st.sidebar.title('Budget Parameters')
-input_budget = st.sidebar.number_input('Budget', value=0)
-channel_number = st.sidebar.number_input('Number of channels', value=0)
+min_price = pd.DataFrame(min_price)
+min_price['minimum'] = min_price['minimum'].astype(int)
 
 
-
-
-# Getting Variables
+################################ Applying Class ###################################################################################
 
 gamned_class = GAMNED_UAE(df_data, df_objective)
-df_age = gamned_class.get_age_data()
-df_freq = gamned_class.get_data_freq()
-df_rating = gamned_class.get_mean_rating()
-df_rating1 = gamned_class.get_channel_rating(selected_age, df_age, df_freq, df_rating)
-if selected_target == 'b2b':
-  df_b2b = gamned_class.get_target()
-  df_rating1 = gamned_class.add_target(df_b2b, df_rating1)
-  df_rating1 = df_rating1.reset_index()
-df_rating2 = gamned_class.get_format_rating(df_rating1)
-df_rating3 = gamned_class.get_objective(selected_objective, df_rating2)
-full_format_rating = df_rating3.copy()
-format_rating = df_rating3.copy()
-format_rating['format'] = format_rating['channel'] + ' - ' + format_rating['formats']
-format_rating = format_rating[['channel', 'formats', 'format', selected_objective]]
-min_format = full_format_rating[selected_objective].min()
-max_format = full_format_rating[selected_objective].max()
-format_rating['norm'] = (format_rating[selected_objective] - min_format) / (max_format - min_format)*100
-format_rating['norm'] = format_rating['norm'].apply(round_5)
-format_rating['mapped_colors'] = format_rating['norm'].map(color_dictionary)
-format_rating = format_rating.reset_index()
-format_rating = format_rating.drop(['index'], axis=1)
-column_format_drop = ['format', 'norm', 'mapped_colors']
-displayed_format = format_rating.drop(columns=column_format_drop)
 
-################################# Second heatmap #######################################
+def apply_class():
+  
+  df_age = gamned_class.get_age_data()
+  df_freq = gamned_class.get_data_freq()
+  df_rating = gamned_class.get_mean_rating()
+  df_rating1 = gamned_class.get_channel_rating(selected_age, df_age, df_freq, df_rating)
+  if selected_target == 'b2b':
+    df_b2b = gamned_class.get_target()
+    df_rating1 = gamned_class.add_target(df_b2b, df_rating1)
+    df_rating1 = df_rating1.reset_index()
+  df_rating2 = gamned_class.get_format_rating(df_rating1)
+  df_rating3 = gamned_class.get_objective(selected_objective, df_rating2)
+  df_rating3 = df_rating3[~df_rating3['channel'].isin(excluded_channel)]
+  df_rating3 = df_rating3.reset_index(drop=True)
 
-second_heatmap = format_rating.head(36)
-heatmap_data = second_heatmap['norm']
-heatmap_labels = second_heatmap['format']
+  return df_rating3
 
-################################## Computing Scores ###################################
+df_rating3 = apply_class()
 
-channel_count = pd.DataFrame(df_rating3.groupby('channel')['formats'].count())
-channel_count = channel_count.reset_index()
-col_names = ['channel', 'count']
-channel_count.columns = col_names
+if selected_objective == 'branding display' or selected_objective == 'branding video':
+    selected_objective = 'branding'
 
-agg_rating = df_rating3.drop(['formats'], axis=1)
-agg_rating1 = agg_rating.groupby('channel').sum()
-agg_rating1 = agg_rating1.reset_index()
-agg_rating2 = agg_rating1.sort_values(by='channel')
-channel_count2 = channel_count.sort_values(by='channel')
-agg_rating2['average'] = agg_rating2[selected_objective] / channel_count2['count']
-agg_rating3 = agg_rating2.sort_values(by='average', ascending=False)
-cost_rating = agg_rating3.copy()
-agg_rating4 = agg_rating3.copy()
-agg_rating_min = agg_rating3['average'].min()
-agg_rating_max = agg_rating3['average'].max()
-agg_rating3['average'] = ((agg_rating3['average'] - agg_rating_min) / (agg_rating_max - agg_rating_min))*100
-output_rating = agg_rating3.copy()
+########################################## Country Ratings #######################################################################
+
+def country_rating(df_rating3):
+
+  if selected_region != 'None':
+
+    df_region = weighted_country[['channel', selected_region]]
+    region_max = df_region[selected_region].max()
+    region_min = df_region[selected_region].min()
+    df_region[selected_region] = ((df_region[selected_region] - region_min) / (region_max - region_min))*10
+    df_rating3 = df_rating3.merge(df_region, on='channel', how='left')
+    df_rating3[selected_objective] = df_rating3[selected_objective] + df_rating3[selected_region]
+    df_rating3 = df_rating3.sort_values(by=selected_objective, ascending=False)
+
+  return df_rating3
+
+df_rating3 = country_rating(df_rating3)
 
 
-                        
+################################################ Format Ratings #################################################################
 
-#################################### Building Heatmap ####################################
+def format_rating(df_rating3):
 
-heat_map = output_rating.drop([selected_objective], axis=1)
-#heat_map1 = heat_map.groupby('channel').sum()
-#heat_map2= heat_map1.sort_values(by=selected_objective, ascending=False)
-heat_map['average'] = heat_map['average'].apply(round_5)
+  full_format_rating = df_rating3.copy()
+  format_rating = df_rating3.copy()
+  format_rating['channel'] = format_rating['channel'].replace('in game advertising', 'IGA')
+  format_rating['format'] = format_rating['channel'] + ' - ' + format_rating['formats']
+  format_rating = format_rating[['channel', 'formats', 'format', selected_objective]]
+  min_format = full_format_rating[selected_objective].min()
+  max_format = full_format_rating[selected_objective].max()
+  format_rating['norm'] = (format_rating[selected_objective] - min_format) / (max_format - min_format)*100
+  format_rating['norm'] = format_rating['norm'].astype(float).round(0)
+  #format_rating2 = format_rating.copy()
+  #format_rating2['norm'] = format_rating2['norm'].apply(lambda x: x**2)
+  #format_rating2['norm'] = format_rating2['norm'].astype(float).round(2)
+  #format_rating['norm'] = format_rating['norm'].apply(round_5)
+  #format_rating['mapped_colors'] = format_rating['norm'].map(color_dictionary)
+  format_rating = format_rating.reset_index()
+  format_rating = format_rating.drop(['index'], axis=1)
+  
+  return format_rating
 
-heat_map['mapped_colors'] = heat_map['average'].map(color_dictionary)
-heat_map = heat_map.reset_index()
-heat_map2 = heat_map.head(10)
+format_rating = format_rating(df_rating3) 
 
 
-##################################### Max Channel Budget ##################################
+# Format rating is the component for the heatmap
 
-min_display = 5000
-min_inread_video = 5000
-min_youtube = 4000
-min_facebook = 4000
-min_tiktok = 4000
-min_instagram = 3000
-min_linkedin = 4000
-min_snapchat = 3000
-min_search = 1000
+############################################## Adding Price Rating ##############################################################
 
-##################################### Buidling Budget #####################################
+def price_rating(df_objective, format_rating):
 
-cost_rating = cost_rating.drop([selected_objective], axis=1)
-cost_rating = cost_rating.sort_values(by='average', ascending=False)
-cost_rating = cost_rating.reset_index()
-cost_rating_std = cost_rating['average'].std()
-cost_rating_mean = cost_rating['average'].mean()
-cost_rating['norm'] = (cost_rating['average'] - cost_rating_mean) / cost_rating_std
-df_price_rating = cost_rating.copy()
-threshold = cost_rating['norm'].max() - 0.50*cost_rating['norm'].max()
+    df_objective['channel'] = df_objective['channel'].replace('in game advertising', 'IGA')
+    df_objective['format'] = df_objective['channel'] + ' - ' + df_objective['formats']
+    df_price = df_objective[['format', 'price']]
+    df_price['price'] = df_price['price'] * 3
+    
+    
+    format_pricing = format_rating.copy()
+    format_pricing = format_pricing.merge(df_price, on='format', how='inner')
+    format_pricing = format_pricing.drop_duplicates()
+    
+    format_pricing[selected_objective] = format_pricing[selected_objective] + format_pricing['price']
+    
+    dropout = ['format', 'norm', 'price']
+    new_col = ['channel', 'formats', 'rating']
+    format_pricing = format_pricing.drop(columns=dropout)
+    format_pricing = format_pricing.rename(columns=dict(zip(format_pricing.columns, new_col)))
+    format_pricing = format_pricing.sort_values(by='rating', ascending=False)
+    return format_pricing
 
-# df_allowance now contains the DataFrame with the specified columns dropped
+format_pricing = price_rating(df_objective, format_rating)
 
-##################################### Imposed budget ######################################
+def round_up_with_infinity(x):
+    if np.isinf(x):
+        return x  # Leave infinite values unchanged
+    else:
+        return np.ceil(x)
+
+format_pricing['rating'] = format_pricing['rating'].apply(round_up_with_infinity)
+
+
+############################################# Building Budget ##################################################################
+
 
 if channel_number == 0:
-  if input_budget < 5001 and selected_objective == 'consideration':
-    disp_allow = input_budget - 500
-    budget_lib1 = {
-      'channel': ['display', 'search'],
-      'allowance': [disp_allow, 500]
-    }
-    df_allowance = pd.DataFrame(budget_lib1)
+
+    if input_budget >= 10000 and input_budget < 15000:
+        
+        if search == True:
+            budget = input_budget - 1000
+            n_format = budget // 4000 + 1
+            format_pricing = format_pricing[format_pricing['channel'] != 'search']
+            selected_format = format_pricing.head(n_format)
+            unique_channel = selected_format['channel'].unique()
+            unique_channel = pd.DataFrame({'channel': unique_channel}) 
+            
+            min_selection = unique_channel.merge(min_price, on='channel', how='inner')
+            
+            min_sum = min_selection['minimum'].sum()
+            selected_format['budget'] = budget * selected_format['rating'] / (selected_format['rating'].sum())
+            selected_format['budget'] = selected_format['budget'].round(0)
+            
     
-  elif input_budget < 5001:
-    df_selection = cost_rating.head(1)
-    df_budget = df_selection.copy()
-    average_max = df_budget['average'].max()
-    average_min = df_budget['average'].min()
-    average_diff = average_max - average_min
-    df_budget['distribution'] = df_budget['average'] / df_budget['average'].sum()
-    df_budget['distribution'] = df_budget['distribution'].apply(lambda x: round(x, 2))
-    df_budget['allowance'] = input_budget * df_budget['distribution']
-    columns_to_drop = ['average', 'index', 'norm', 'distribution']
-    df_allowance = df_budget.drop(columns=columns_to_drop)
+            budget_channel = selected_format.groupby('channel')['budget'].sum().reset_index()
+            
+            search_row = {'channel': 'search', 'budget': 1000}
+            budget_channel.loc[len(budget_channel.index)] = ['search', 1000]
+            budget_channel = budget_channel.sort_values(by='budget', ascending=False)
+
+            
+
+        else:
+
+            n_format = input_budget // 4000 + 1
+            format_pricing = format_pricing[format_pricing['channel'] != 'search']
+            selected_format = format_pricing.head(n_format)
+            unique_channel = selected_format['channel'].unique()
+            unique_channel = pd.DataFrame({'channel': unique_channel}) 
+            
+            min_selection = unique_channel.merge(min_price, on='channel', how='inner')
+            
+            min_sum = min_selection['minimum'].sum()
+            selected_format['budget'] = input_budget * selected_format['rating'] / (selected_format['rating'].sum())
+            selected_format['budget'] = selected_format['budget'].round(0)
+            
     
-  elif input_budget < 10001 and input_budget > 5000:
-    df_selection = cost_rating.head(2)
-    df_budget = df_selection.copy()
-    average_max = df_budget['average'].max()
-    average_min = df_budget['average'].min()
-    average_diff = average_max - average_min
-    df_budget['distribution'] = df_budget['average'] / df_budget['average'].sum()
-    df_budget['distribution'] = df_budget['distribution'].apply(lambda x: round(x, 2))
-    df_budget['allowance'] = input_budget * df_budget['distribution']
-    columns_to_drop = ['average', 'index', 'norm', 'distribution']
-    df_allowance = df_budget.drop(columns=columns_to_drop)
+            budget_channel = selected_format.groupby('channel')['budget'].sum().reset_index()
+            budget_channel = budget_channel.sort_values(by='budget', ascending=False)
 
-  elif input_budget < 15001 and input_budget > 10000:
-    #df_selection = cost_rating[cost_rating['norm'] > threshold]
-    df_selection = cost_rating.head(3)
-    df_budget = df_selection.copy()
-    average_max = df_budget['average'].max()
-    average_min = df_budget['average'].min()
-    average_diff = average_max - average_min
-    df_budget['distribution'] = df_budget['average'] / df_budget['average'].sum()
-    df_budget['distribution'] = df_budget['distribution'].apply(lambda x: round(x, 2))
-    df_budget['allowance'] = input_budget * df_budget['distribution']
-    columns_to_drop = ['average', 'index', 'norm', 'distribution']
-    df_allowance = df_budget.drop(columns=columns_to_drop)
+            
+            
 
-
-  elif input_budget < 20001 and input_budget > 15000:
-    #df_selection = cost_rating[cost_rating['norm'] > threshold]
-    df_selection = cost_rating.head(4)
-    df_budget = df_selection.copy()
-    average_max = df_budget['average'].max()
-    average_min = df_budget['average'].min()
-    average_diff = average_max - average_min
-    df_budget['distribution'] = df_budget['average'] / df_budget['average'].sum()
-    df_budget['distribution'] = df_budget['distribution'].apply(lambda x: round(x, 2))
-    df_budget['allowance'] = input_budget * df_budget['distribution']
-    columns_to_drop = ['average', 'index', 'norm', 'distribution']
-    df_allowance = df_budget.drop(columns=columns_to_drop)
-
-  elif input_budget < 25001 and input_budget > 20000:
-    #df_selection = cost_rating[cost_rating['norm'] > threshold]
-    df_selection = cost_rating.head(5)
-    df_budget = df_selection.copy()
-    average_max = df_budget['average'].max()
-    average_min = df_budget['average'].min()
-    average_diff = average_max - average_min
-    df_budget['distribution'] = df_budget['average'] / df_budget['average'].sum()
-    df_budget['distribution'] = df_budget['distribution'].apply(lambda x: round(x, 2))
-    df_budget['allowance'] = input_budget * df_budget['distribution']
-    columns_to_drop = ['average', 'index', 'norm', 'distribution']
-    df_allowance = df_budget.drop(columns=columns_to_drop)
-
-  else:
-    df_selection = cost_rating.head(6)
-    df_budget = df_selection.copy()
-    average_max = df_budget['average'].max()
-    average_min = df_budget['average'].min()
-    average_diff = average_max - average_min
-    df_budget['distribution'] = df_budget['average'] / df_budget['average'].sum()
-    df_budget['distribution'] = df_budget['distribution'].apply(lambda x: round(x, 2))
-    df_budget['allowance'] = input_budget * df_budget['distribution']
-    columns_to_drop = ['average', 'index', 'norm', 'distribution']
-    df_allowance = df_budget.drop(columns=columns_to_drop)
+    elif input_budget >= 15000:
+        
+        if search == True:
+            budget = input_budget - 2000
+            n_format = budget // 4000 + 1
+            format_pricing = format_pricing[format_pricing['channel'] != 'search']
+            selected_format = format_pricing.head(n_format)
+            unique_channel = selected_format['channel'].unique()
+            unique_channel = pd.DataFrame({'channel': unique_channel}) 
+            
+            min_selection = unique_channel.merge(min_price, on='channel', how='inner')
+            
+            min_sum = min_selection['minimum'].sum()
+            selected_format['budget'] = budget * selected_format['rating'] / (selected_format['rating'].sum())
+            selected_format['budget'] = selected_format['budget'].round(0)
+            
     
+            budget_channel = selected_format.groupby('channel')['budget'].sum().reset_index()
+            
+            search_row = {'channel': 'search', 'budget': 1000}
+            budget_channel.loc[len(budget_channel.index)] = ['search', 2000]
+            budget_channel = budget_channel.sort_values(by='budget', ascending=False)
+
+            
+
+        else:
+
+            n_format = input_budget // 4000 + 1
+            format_pricing = format_pricing[format_pricing['channel'] != 'search']
+            selected_format = format_pricing.head(n_format)
+            unique_channel = selected_format['channel'].unique()
+            unique_channel = pd.DataFrame({'channel': unique_channel}) 
+            
+            min_selection = unique_channel.merge(min_price, on='channel', how='inner')
+            
+            min_sum = min_selection['minimum'].sum()
+            selected_format['budget'] = input_budget * selected_format['rating'] / (selected_format['rating'].sum())
+            selected_format['budget'] = selected_format['budget'].round(0)
+            
+    
+            budget_channel = selected_format.groupby('channel')['budget'].sum().reset_index()
+            budget_channel = budget_channel.sort_values(by='budget', ascending=False)
+
+            
+
+    else:
+
+        if search == True:
+            
+            budget = input_budget - 1000
+            format_pricing = format_pricing[format_pricing['channel'] != 'search']
+            n_format = 2
+            selected_format = format_pricing.head(n_format)
+            unique_channel = selected_format['channel'].unique()
+            unique_channel = pd.DataFrame({'channel': unique_channel}) 
+            
+            min_selection = unique_channel.merge(min_price, on='channel', how='inner')
+            
+            min_sum = min_selection['minimum'].sum()
+            selected_format['budget'] = budget * selected_format['rating'] / (selected_format['rating'].sum())
+            selected_format['budget'] = selected_format['budget'].round(0)
+            
+    
+            budget_channel = selected_format.groupby('channel')['budget'].sum().reset_index()
+            budget_channel.loc[len(budget_channel.index)] = ['search', 1000]
+            budget_channel = budget_channel.sort_values(by='budget', ascending=False)
+    
+            
+
+        else:
+
+            format_pricing = format_pricing[format_pricing['channel'] != 'search']
+            n_format = 2
+            selected_format = format_pricing.head(n_format)
+            unique_channel = selected_format['channel'].unique()
+            unique_channel = pd.DataFrame({'channel': unique_channel}) 
+            
+            min_selection = unique_channel.merge(min_price, on='channel', how='inner')
+            
+            min_sum = min_selection['minimum'].sum()
+            selected_format['budget'] = input_budget * selected_format['rating'] / (selected_format['rating'].sum())
+            selected_format['budget'] = selected_format['budget'].round(0)
+            
+    
+            budget_channel = selected_format.groupby('channel')['budget'].sum().reset_index()
+            budget_channel = budget_channel.sort_values(by='budget', ascending=False)
+    
+            
+
 else:
-  df_selection = cost_rating.head(channel_number)
-  df_budget = df_selection.copy()
-  average_max = df_budget['average'].max()
-  average_min = df_budget['average'].min()
-  average_diff = average_max - average_min
-  df_budget['distribution'] = df_budget['average'] / df_budget['average'].sum()
-  df_budget['distribution'] = df_budget['distribution'].apply(lambda x: round(x, 2))
-  df_budget['allowance'] = input_budget * df_budget['distribution']
-  columns_to_drop = ['average', 'index', 'norm', 'distribution']
-  df_allowance = df_budget.drop(columns=columns_to_drop)
+
+    if input_budget < 15000:
+
+        if search == True:
+    
+            format_pricing = format_pricing[format_pricing['channel'] != 'search']
+            budget = input_budget - 1000
+            uni_channels = set()
+            consecutive_rows = []
+        
+            for index, row in format_pricing.iterrows():
+                chan = row['channel']
+                if chan not in uni_channels:
+                    uni_channels.add(chan)
+                    consecutive_rows.append(row.to_dict())
+                if len(uni_channels) == channel_number:
+                    break
+        
+            selected_format = pd.DataFrame(consecutive_rows)
+            selected_format['budget'] = budget * selected_format['rating'] / (selected_format['rating'].sum())
+            selected_format['budget'] = selected_format['budget'].round(0)
+            budget_channel = selected_format.groupby('channel')['budget'].sum().reset_index()
+            budget_channel.loc[len(budget_channel.index)] = ['search', 1000]
+            budget_channel = budget_channel.sort_values(by='budget', ascending=False)
+        
+            
+
+        else:
+            
+            format_pricing = format_pricing[format_pricing['channel'] != 'search']
+            uni_channels = set()
+            consecutive_rows = []
+        
+            for index, row in format_pricing.iterrows():
+                chan = row['channel']
+                if chan not in uni_channels:
+                    uni_channels.add(chan)
+                    consecutive_rows.append(row.to_dict())
+                if len(uni_channels) == channel_number:
+                    break
+        
+            selected_format = pd.DataFrame(consecutive_rows)
+            selected_format['budget'] = input_budget * selected_format['rating'] / (selected_format['rating'].sum())
+            selected_format['budget'] = selected_format['budget'].round(0)
+            budget_channel = selected_format.groupby('channel')['budget'].sum().reset_index()
+            budget_channel = budget_channel.sort_values(by='budget', ascending=False)
+        
+            
+
+    else:
+
+        if search == True:
+    
+            format_pricing = format_pricing[format_pricing['channel'] != 'search']
+            budget = input_budget - 2000
+            uni_channels = set()
+            consecutive_rows = []
+        
+            for index, row in format_pricing.iterrows():
+                chan = row['channel']
+                if chan not in uni_channels:
+                    uni_channels.add(chan)
+                    consecutive_rows.append(row.to_dict())
+                if len(uni_channels) == channel_number:
+                    break
+        
+            selected_format = pd.DataFrame(consecutive_rows)
+            selected_format['budget'] = budget * selected_format['rating'] / (selected_format['rating'].sum())
+            selected_format['budget'] = selected_format['budget'].round(0)
+            budget_channel = selected_format.groupby('channel')['budget'].sum().reset_index()
+            budget_channel.loc[len(budget_channel.index)] = ['search', 2000]
+            budget_channel = budget_channel.sort_values(by='budget', ascending=False)
+        
+            
+
+        else:
+            
+            format_pricing = format_pricing[format_pricing['channel'] != 'search']
+            uni_channels = set()
+            consecutive_rows = []
+        
+            for index, row in format_pricing.iterrows():
+                chan = row['channel']
+                if chan not in uni_channels:
+                    uni_channels.add(chan)
+                    consecutive_rows.append(row.to_dict())
+                if len(uni_channels) == channel_number:
+                    break
+        
+            selected_format = pd.DataFrame(consecutive_rows)
+            selected_format['budget'] = input_budget * selected_format['rating'] / (selected_format['rating'].sum())
+            selected_format['budget'] = selected_format['budget'].round(0)
+            budget_channel = selected_format.groupby('channel')['budget'].sum().reset_index()
+            budget_channel = budget_channel.sort_values(by='budget', ascending=False)
+        
+        
+
+############################################## Getting the Channel rating by agg formats ########################################
+
+def agg_channel_rating(df_rating3):
+  
+  channel_count = pd.DataFrame(df_rating3.groupby('channel')['formats'].count())
+  channel_count = channel_count.reset_index()
+  col_names = ['channel', 'count']
+  channel_count.columns = col_names
+  
+  agg_rating = df_rating3.drop(['formats'], axis=1)
+  agg_rating1 = agg_rating.groupby('channel').sum()
+  agg_rating1 = agg_rating1.reset_index()
+  agg_rating2 = agg_rating1.sort_values(by='channel')
+  channel_count2 = channel_count.sort_values(by='channel')
+  agg_rating2['average'] = agg_rating2[selected_objective] / channel_count2['count']
+  agg_rating3 = agg_rating2.sort_values(by='average', ascending=False)
+  
+  cost_rating = agg_rating3.copy()
+  agg_rating4 = agg_rating3.copy()
+  agg_rating4 = agg_rating4.reset_index(drop=True)
+  cost_rating = cost_rating.reset_index(drop=True)
+  
+  agg_rating_min = agg_rating3['average'].min()
+  agg_rating_max = agg_rating3['average'].max()
+  agg_rating3['average'] = ((agg_rating3['average'] - agg_rating_min) / (agg_rating_max - agg_rating_min))*100
+  output_rating = agg_rating3.copy()
+
+  return cost_rating, agg_rating4, output_rating
+
+cost_rating, agg_rating4, output_rating = agg_channel_rating(df_rating3)
+
+
+############################################# Gettign the top Channel ###################################################################
+
+def top_channel(agg_rating4):
+
+  top_channel = agg_rating4.at[0, 'channel']
+  top_channel = top_channel.title()
+  return top_channel
+
+top_channel = top_channel(agg_rating4)
+
+
+##########################################  Bubble graph Data #######################################################################
+
+format1 = df_objective.copy()
+format1['channel'] = format1['channel'].replace('in game advertising', 'IGA')
+format2 = selected_format.copy()
+format3 = format_rating.copy()
+format4 = format_rating.copy()
+
+format1['unique'] = format1['channel'] + ' ' + format1['formats']
+format2['unique'] = format2['channel'] + ' ' + format2['formats']
+format3['unique'] = format3['channel'] + ' ' + format3['formats']
+format4['unique'] = format4['channel'] + ' ' + format4['formats']
+
+col_drop1 = ['branding', 'consideration', 'conversion', 'branding video']
+col_drop2 = ['rating']
+col_drop3 = ['format', 'norm']
+col_drop4 = ['channel', 'formats', 'format', 'norm']
+
+format1 = format1.drop(columns=col_drop1)
+format2 = format2.drop(columns=col_drop2)
+format3 = format3.drop(columns=col_drop3)
+format3 = format3.head(3)
+format4 = format4.drop(columns=col_drop4)
+
+
+top_rating = format3.merge(format1, on='unique', how='inner')
+
+top_rating = top_rating.drop_duplicates()
+top_budget = format2.merge(format1, on='unique', how='inner')
+top_budget = top_budget.drop_duplicates()
+top_budget = top_budget.merge(format4, on='unique', how='inner')
+col_drop1 = ['channel_y', 'formats_y', 'format']
+col_drop2 = ['channel_y', 'formats_y', 'format']
+top_rating = top_rating.drop(columns=col_drop1)
+top_budget = top_budget.drop(columns=col_drop2)
+new_val = [1000] * len(top_rating)
+top_rating['budget'] = new_val
+df_bubble = pd.concat([top_budget, top_rating])
+df_bubble.reset_index(drop=True, inplace=True)
+df_bubble = df_bubble.drop_duplicates(subset=['unique'])
+drop_col = ['unique']
+df_bubble = df_bubble.drop(columns=drop_col)
+df_bubble[selected_objective] = df_bubble[selected_objective].apply(round_up_with_infinity)
+
+
+######################################### heatmap ###################################################################################
+
+
+def formatting_heatmap(format_rating, selected_objective):
+
+    format_rating = format_rating.drop('format', axis=1)
+    format_rating['channel'] = format_rating['channel'].str.upper()
+    format_rating['formats'] = format_rating['formats'].str.title()
+    format_rating['format'] = format_rating['channel'] + ' - ' + format_rating['formats']
+    top_format = format_rating.head(42)
+    min_top_format = top_format['norm'].min()
+    max_top_format = top_format['norm'].max()
+    top_format = top_format.drop(selected_objective, axis=1)
+    top_format['norm'] = (((top_format['norm'] - min_top_format) / (max_top_format - min_top_format)) * 100).round(0)
+    #top_format = top_format.sample(frac=1)
+    top_format = top_format.sort_values(by='norm', ascending=True)
+    return top_format
+
+top_format = formatting_heatmap(format_rating, selected_objective)
+
+
+def heatmap_data(top_format):
+    
+    top_format['format'] = top_format['format'].str.title()
+    top_format['format'] = top_format['format'].replace('Twitter - Video Ads With Conversation Button', 'Twitter - Video Ads With Conv. Button')
+    top_format['format'] = top_format['format'].replace('Twitter - Video Ads With Website Button', 'Twitter - Video Ads With Web. Button')
+    labels = top_format['format'].tolist()
+    scores = top_format['norm'].to_numpy()
+    scores_matrix = scores.reshape(6, 7)
+    return labels, scores_matrix
+
+labels, scores_matrix = heatmap_data(top_format)
+
+    
+
+# Sample data
+#labels = [f"Label {i+1}" for i in range(48)]  # 8 columns x 6 rows = 48 labels
+#scores = np.random.randint(0, 101, size=48)  # Generate random scores from 0 to 100
+
+# Reshape scores into a 6x8 grid for the heatmap
+#scores_matrix = scores.reshape(6, 8)
+
+# Define a custom color scale with more shades of red and yellow
+custom_color_scale = [
+    [0, 'rgb(255, 255, 102)'],    # Light yellow
+    [0.1, 'rgb(255, 255, 0)'],    # Yellow
+    [0.2, 'rgb(255, 220, 0)'],    # Yellow with a hint of orange
+    [0.4, 'rgb(255, 190, 0)'],    # Darker yellow
+    [0.6, 'rgb(255, 140, 0)'],    # Light red-orange
+    [0.7, 'rgb(255, 85, 0)'],     # Red-orange
+    [0.8, 'rgb(255, 51, 0)'],     # Red
+    [1, 'rgb(204, 0, 0)']         # Dark red
+]
+
+# Create a custom heatmap using Plotly with 8 columns and 6 rows
+fig = go.Figure()
+
+# Add the heatmap trace with the custom color scale
+fig.add_trace(go.Heatmap(
+    z=scores_matrix,
+    colorscale=custom_color_scale,  # Use the custom color scale
+    hoverongaps=False,
+    showscale=False,  # Hide the color scale
+    hovertemplate='%{z:.2f}<extra></extra>',
+    xgap=2,
+    ygap=2# Customize hover tooltip
+))
+
+
+# Add labels as annotations in the heatmap squares
+for i, label in enumerate(labels):
+    row = i // 7
+    col = i % 7
+    
+    fig.add_annotation(
+        text=label,
+        x=col,
+        y=row,
+        xref='x',
+        yref='y',
+        showarrow=False,
+        font=dict(size=10, color='black'),
+        align='center'
+    )
+
+# Remove the axis labels and lines
+fig.update_xaxes(showline=False, showticklabels=False)
+fig.update_yaxes(showline=False, showticklabels=False)
+
+fig.update_layout(
+    width=750,  # Adjust the width as needed
+    height=500,  # Adjust the height for 6 rows
+    hovermode='closest',
+    margin=dict(l=25, r=25, t=25, b=25),
+    
+    
+)
 
 
 
-#################################### First Bubble Chart ###################################
-
-merged_df = agg_rating4.merge(df_allowance, on='channel', how='inner')
-merged_df[selected_objective] = merged_df[selected_objective].apply(lambda x: round(x, 1))
-merged_df['average'] = merged_df['average'].apply(lambda x: round(x, 1))
-merged_df['average'] = merged_df['average'] * 5 / 25
-merged_df[selected_objective] = merged_df[selected_objective] * 5 / 150
-                                                                    
+# Display the Plotly figure in Streamlit with full width
+st.plotly_chart(fig, use_container_width=True)
 
 
 
-
-
-##################################### Budget Rules ########################################
-
-
-
+#################################################################################################################################
 
   
-#elif input_budget < 100001 and input_budget > 5001:
-  #if df_allowance.shape[0] > 2:
-    #df_budget = df_budget.head(2)
-    #df_budget['allowance'] = input_budget * df_budget['distribution']
-    #df_allowance = df_budget.drop(columns=columns_to_drop)
+df_pie_chart = (budget_channel)
 
-  
+df_pie_chart['channel'] = df_pie_chart['channel'].str.title()
+df_pie_chart['channel'] = df_pie_chart['channel'].replace('Iga', 'IGA')
+df_pie_chart['budget'] = df_pie_chart['budget'].apply(lambda x: round(x, -1))
 
+df_allow_table = df_pie_chart.copy()
 
+new_cols = ['Channel', 'Budget']
 
-##################################### taking out the code and name ########################
+df_allow_table.columns = new_cols
 
-name0 = format_rating.at[0, 'format']
-color0 = format_rating.at[0, 'mapped_colors']
-name1 = format_rating.at[1, 'format']
-color1 = format_rating.at[1, 'mapped_colors']
-name2 = format_rating.at[2, 'format']
-color2 = format_rating.at[2, 'mapped_colors']
-name3 = format_rating.at[3, 'format']
-color3 = format_rating.at[3, 'mapped_colors']
-name4 = format_rating.at[4, 'format']
-color4 = format_rating.at[4, 'mapped_colors']
-name5  = format_rating.at[5, 'format']
-color5 = format_rating.at[5, 'mapped_colors']
-name6  = format_rating.at[6, 'format']
-color6 = format_rating.at[6, 'mapped_colors']
-name7  = format_rating.at[7, 'format']
-color7 = format_rating.at[7, 'mapped_colors']
-name8  = format_rating.at[8, 'format']
-color8 = format_rating.at[8, 'mapped_colors']
-name9  = format_rating.at[9, 'format']
-color9 = format_rating.at[9, 'mapped_colors']
-name10  = format_rating.at[10, 'format']
-color10 = format_rating.at[10, 'mapped_colors']
-name11  = format_rating.at[11, 'format']
-color11 = format_rating.at[11, 'mapped_colors']
-name12  = format_rating.at[12, 'format']
-color12 = format_rating.at[12, 'mapped_colors']
-name13  = format_rating.at[13, 'format']
-color13 = format_rating.at[13, 'mapped_colors']
-name14  = format_rating.at[14, 'format']
-color14 = format_rating.at[14, 'mapped_colors']
-name15  = format_rating.at[15, 'format']
-color15 = format_rating.at[15, 'mapped_colors']
-name16  = format_rating.at[16, 'format']
-color16 = format_rating.at[16, 'mapped_colors']
-name17  = format_rating.at[17, 'format']
-color17 = format_rating.at[17, 'mapped_colors']
-name18  = format_rating.at[18, 'format']
-color18 = format_rating.at[18, 'mapped_colors']
-name19  = format_rating.at[19, 'format']
-color19 = format_rating.at[19, 'mapped_colors']
-name20  = format_rating.at[20, 'format']
-color20 = format_rating.at[20, 'mapped_colors']
-name21  = format_rating.at[21, 'format']
-color21 = format_rating.at[21, 'mapped_colors']
-name22  = format_rating.at[22, 'format']
-color22 = format_rating.at[22, 'mapped_colors']
-name23  = format_rating.at[23, 'format']
-color23 = format_rating.at[23, 'mapped_colors']
-name24  = format_rating.at[24, 'format']
-color24 = format_rating.at[24, 'mapped_colors']
-name25  = format_rating.at[25, 'format']
-color25 = format_rating.at[25, 'mapped_colors']
-name26  = format_rating.at[26, 'format']
-color26 = format_rating.at[26, 'mapped_colors']
-name27  = format_rating.at[27, 'format']
-color27 = format_rating.at[27, 'mapped_colors']
-name28  = format_rating.at[28, 'format']
-color28 = format_rating.at[28, 'mapped_colors']
-name29  = format_rating.at[29, 'format']
-color29 = format_rating.at[29, 'mapped_colors']
-name30  = format_rating.at[30, 'format']
-color30 = format_rating.at[30, 'mapped_colors']
-name31  = format_rating.at[31, 'format']
-color31 = format_rating.at[31, 'mapped_colors']
-name32  = format_rating.at[32, 'format']
-color32 = format_rating.at[32, 'mapped_colors']
-name33  = format_rating.at[33, 'format']
-color33 = format_rating.at[33, 'mapped_colors']
-name34  = format_rating.at[34, 'format']
-color34 = format_rating.at[34, 'mapped_colors']
-name35  = format_rating.at[35, 'format']
-color35 = format_rating.at[35, 'mapped_colors']
-name36  = format_rating.at[36, 'format']
-color36 = format_rating.at[36, 'mapped_colors']
-name37  = format_rating.at[37, 'format']
-color37 = format_rating.at[37, 'mapped_colors']
-name38  = format_rating.at[38, 'format']
-color38 = format_rating.at[38, 'mapped_colors']
-name39  = format_rating.at[39, 'format']
-color39 = format_rating.at[39, 'mapped_colors']
+df_bubble.rename(columns={selected_objective: 'Rating'}, inplace=True)
+df_bubble.rename(columns={'price': 'Price'}, inplace=True)
+df_bubble['channel_x'] = df_bubble['channel_x'].str.title()
+df_bubble['channel_x'] = df_bubble['channel_x'].replace('Iga', 'IGA')
 
 
-#####################################   Pie Chart freq ####################################
+if input_budget == 0: 
+ st.write('Awaiting for budget...')
 
-df_freq['branding'] = df_freq['branding'].round(1)
-df_freq['consideration'] = df_freq['consideration'].round(1)
-df_freq['conversion'] = df_freq['conversion'].round(1)
-
-
-st.text(' ')
+else:
 
 
-styled_df_html = displayed_format.to_html(classes='styled-dataframe', escape=False)
-
-# Create a scrollable table using HTML and CSS
-scrollable_table = f"""
-    <div style="height: 300px; overflow: auto;">
-        {styled_df_html}
-    </div>
-"""
-
-# Display the scrollable table
-st.title("Top Formats")
-st.markdown(scrollable_table, unsafe_allow_html=True)
-
-
-st.text(' ')
-
-st.title("Heatmap")
-
-heatmap_size = 6
-heatmap_data = heatmap_data.reset_index()
-data_matrix = heatmap_data["norm"].values.reshape(heatmap_size, heatmap_size)
-plt.figure(figsize=(25, 25))
-sns.heatmap(data_matrix, cmap="flare", annot=False, xticklabels=False, yticklabels=False, cbar=False)
-for i in range(heatmap_size):
-  for j in range(heatmap_size):
-    label = format_rating.at[i+j, 'channel'] + '\n' + '\n' + format_rating.at[i+j, 'formats']
-    font_prop = fm.FontProperties(weight='bold', size=17)
-    plt.text(j + 0.5, i + 0.5, label, ha='center', color='white', fontsize=17, fontproperties=font_prop)
-    
-st.pyplot(plt)
-
-
-
-st.text(' ')
-
-st.title('Budget Allocation')
-
-budget_column1, budget_column2 = st.columns(2)
-
-
-
-with budget_column1:
-  
-  st.dataframe(df_allowance)
-
-custom_colors1 = sns.color_palette('Blues', n_colors=len(df_allowance))
-
-with budget_column2:
-
-  if input_budget == 0:
-    st.text('Awaiting for budget...')
-
-  else: 
-  
-    fig4, ax4 = plt.subplots()
-    ax4.pie(df_allowance['allowance'], labels=df_allowance['channel'], startangle=90, wedgeprops=dict(width=0.4), colors=custom_colors1, autopct='%1.1f%%', pctdistance=0.85,
-           textprops=dict(color="black"))
-    
-    
-    center_circle = plt.Circle((0,0), 0.7, fc='white')
-    fig4.gca().add_artist(center_circle)
-    
-    middle_text = ax4.text(0, 0, f"Total: {input_budget} USD", ha='center', va='center', fontsize=12, color='black', weight='bold')
-    
-    ax4.axis('equal')
-    
-    st.pyplot(fig4)
-
-st.text(' ')
-
-sns.set_palette("Set1")
-
-
-
-#df_bubble['average'] = df_bubble['average'] * 5 / 25
-
-if input_budget != 0:
-  
-  plt.figure(figsize=(8, 6))
-  ax = sns.scatterplot(data=merged_df, x='average', y=selected_objective, size='allowance', sizes=(10, 10000), alpha=1.0, legend=False, hue=merged_df['channel'])
-  
-  for index, row in merged_df.iterrows():
-    label = row['channel']  # Get the label from the 'label' column
-    ax.annotate(label, (row['average'], row[selected_objective]), fontsize=12, ha='center')
-
-  plt.xlim(merged_df['average'].min() - 0.5, merged_df['average'].max() + 0.5)
-  plt.ylim(merged_df[selected_objective].min() - 0.5, merged_df[selected_objective].max() + 0.5)
-  plt.gcf().set_facecolor('none')
-  st.pyplot(plt)
-
-             
+ col1, col2 = st.columns(2)
  
-else:
-  st.text('Waiting for budget')
-
-st.text(' ')
-
-
-
-#################################### Bubble graph test #################################
-
-
-
-
-
-
-################################ Cost Test ############################################
-
-col1, col2, col3, col4, col5, col6 = st.columns(6)
-
-with col1:
+ 
+ with col1:
   
-  price_youtube = st.number_input('Youtube $', step=0.1, value=1.0)
-  price_nativead = st.number_input('Native Ads $', step=0.1, value=1.0)
-
-with col2:
-
-  price_display = st.number_input('Display $', step=0.1,  value=1.0)
-  price_amazon = st.number_input('Amazon $', step=0.1, value=1.0)
-
-with col3:
-
+    st.write("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Budget Allocation")
+   
+    with elements("pie_chart"):
   
-  price_instagram = st.number_input('Instagram $', step=0.1, value=1.0)
-  price_tiktok = st.number_input('TikTok $', step=0.1, value=1.0)
+        
   
-
-with col4:
-
-  price_facebook = st.number_input('Facebook $', step=0.1, value=1.0)
-  price_twitter = st.number_input('Twitter $', step=0.1, value=1.0)
-  
-
-with col5:
-  
-  price_linkedin = st.number_input('Linkedin $', step=0.1, value=1.0)
-  price_connectedtv = st.number_input('Connected TV $', step=0.1,  value=1.0)
-
-with col6:
-
-  price_search = st.number_input('Search $', step=0.1, value=1.0)
-  price_snapchat = st.number_input('Snapchat $', step=0.1, value=1.0)
-
-pcol1, pcol2, pcol3, pcol4, pcol5 = st.columns(5)
-
-with pcol1:
-
-  price_gamead = st.number_input('In game ad $', step=0.1, value=1.0)
-
-with pcol2:
-
-  price_twitch = st.number_input('Twitch $', step=0.1, value=1.0)
-
-with pcol3:
-
-  price_dooh = st.number_input('DOOH $', step=0.1, value=1.0)
-
-with pcol4:
-
-  price_audio = st.number_input('Audio $', step=0.1, value=1.0)
-
-with pcol5:
-
-  price_waze = st.number_input('Waze $', step=0.1, value=1.0)
-
-
-###################################### Creating Dictinary ###################################
-
-price_dict = {
-  'youtube': price_youtube, 'display': price_display, 'instagram': price_instagram, 'facebook': price_facebook,
-  'linkedin': price_linkedin, 'search': price_search, 'native ads': price_nativead, 'amazon': price_amazon,
-  'tiktok': price_tiktok, 'twitter': price_twitter, 'connected tv': price_connectedtv, 'snapchat': price_snapchat,
-  'in game advertising': price_gamead, 'twitch': price_twitch, 'dooh': price_dooh, 'audio': price_audio,
-  'waze': price_waze
-}
-
-######################################## Mapping prices #####################################
-
-df_price_rating['price'] = df_price_rating['channel'].map(price_dict)
-df_price_rating = df_price_rating.drop(['norm'], axis=1)
-df_price_rating['average'] = df_price_rating['average'].apply(lambda x: round(x, 2))
-def square_value(x):
-    return x ** 2
-
-df_price_rating['Squared Average'] = df_price_rating['average'].apply(square_value)
-df_price_rating['ratio'] = df_price_rating['Squared Average'] / df_price_rating['price']
-df_price_rating = df_price_rating.sort_values(by='ratio', ascending=False)
-
-
-
-
-
-######################################## Making the allowance ################################
-
-if channel_number == 0:
-  if input_budget < 5001 and selected_objective == 'consideration':
-    disp_allow2 = input_budget - 500
-    budget_lib2 = {
-      'channel': ['display', 'search'],
-      'allowance': [disp_allow2, 500]
-    }
-    df_allowance2 = pd.DataFrame(budget_lib2)
-    
-  elif input_budget < 5001:
-    df_selection2 = df_price_rating.head(1)
-    df_budget2 = df_selection2.copy()
-    ratio_max = df_budget2['ratio'].max()
-    ratio_min = df_budget2['ratio'].min()
-    ratio_diff = ratio_max - ratio_min
-    df_budget2['distribution'] = df_budget2['ratio'] / df_budget2['ratio'].sum()
-    df_budget2['distribution'] = df_budget2['distribution'].apply(lambda x: round(x, 2))
-    df_budget2['allowance'] = input_budget * df_budget2['distribution']
-    df_bubble = df_budget2.copy()
-    columns_to_drop2 = ['average', 'index', 'Squared Average', 'ratio', 'distribution']
-    df_allowance2 = df_budget2.drop(columns=columns_to_drop2)
-
-  elif input_budget < 10001 and input_budget > 5000:
-    df_selection2 = df_price_rating.head(2)
-    df_budget2 = df_selection2.copy()
-    ratio_max = df_budget2['ratio'].max()
-    ratio_min = df_budget2['ratio'].min()
-    ratio_diff = ratio_max - ratio_min
-    df_budget2['distribution'] = df_budget2['ratio'] / df_budget2['ratio'].sum()
-    df_budget2['distribution'] = df_budget2['distribution'].apply(lambda x: round(x, 2))
-    df_budget2['allowance'] = input_budget * df_budget2['distribution']
-    df_bubble = df_budget2.copy()
-    columns_to_drop2 = ['average', 'index', 'Squared Average', 'ratio', 'distribution']
-    df_allowance2 = df_budget2.drop(columns=columns_to_drop2)
-
-  elif input_budget < 15001 and input_budget > 10000:
-    df_selection2 = df_price_rating.head(3)
-    df_budget2 = df_selection2.copy()
-    ratio_max = df_budget2['ratio'].max()
-    ratio_min = df_budget2['ratio'].min()
-    ratio_diff = ratio_max - ratio_min
-    df_budget2['distribution'] = df_budget2['ratio'] / df_budget2['ratio'].sum()
-    df_budget2['distribution'] = df_budget2['distribution'].apply(lambda x: round(x, 2))
-    df_budget2['allowance'] = input_budget * df_budget2['distribution']
-    df_bubble = df_budget2.copy()
-    columns_to_drop2 = ['average', 'index', 'Squared Average', 'ratio', 'distribution']
-    df_allowance2 = df_budget2.drop(columns=columns_to_drop2)
-
-  elif input_budget < 20001 and input_budget > 15000:
-    df_selection2 = df_price_rating.head(4)
-    df_budget2 = df_selection2.copy()
-    ratio_max = df_budget2['ratio'].max()
-    ratio_min = df_budget2['ratio'].min()
-    ratio_diff = ratio_max - ratio_min
-    df_budget2['distribution'] = df_budget2['ratio'] / df_budget2['ratio'].sum()
-    df_budget2['distribution'] = df_budget2['distribution'].apply(lambda x: round(x, 2))
-    df_budget2['allowance'] = input_budget * df_budget2['distribution']
-    df_bubble = df_budget2.copy()
-    columns_to_drop2 = ['average', 'index', 'Squared Average', 'ratio', 'distribution']
-    df_allowance2 = df_budget2.drop(columns=columns_to_drop2)
-
-  elif input_budget < 25001 and input_budget > 15000:
-    df_selection2 = df_price_rating.head(5)
-    df_budget2 = df_selection2.copy()
-    ratio_max = df_budget2['ratio'].max()
-    ratio_min = df_budget2['ratio'].min()
-    ratio_diff = ratio_max - ratio_min
-    df_budget2['distribution'] = df_budget2['ratio'] / df_budget2['ratio'].sum()
-    df_budget2['distribution'] = df_budget2['distribution'].apply(lambda x: round(x, 2))
-    df_budget2['allowance'] = input_budget * df_budget2['distribution']
-    df_bubble = df_budget2.copy()
-    columns_to_drop2 = ['average', 'index', 'Squared Average', 'ratio', 'distribution']
-    df_allowance2 = df_budget2.drop(columns=columns_to_drop2)
-
-  else:
-    df_selection2 = df_price_rating.head(6)
-    df_budget2 = df_selection2.copy()
-    ratio_max = df_budget2['ratio'].max()
-    ratio_min = df_budget2['ratio'].min()
-    ratio_diff = ratio_max - ratio_min
-    df_budget2['distribution'] = df_budget2['ratio'] / df_budget2['ratio'].sum()
-    df_budget2['distribution'] = df_budget2['distribution'].apply(lambda x: round(x, 2))
-    df_budget2['allowance'] = input_budget * df_budget2['distribution']
-    df_bubble = df_budget2.copy()
-    columns_to_drop2 = ['average', 'index', 'Squared Average', 'ratio', 'distribution']
-    df_allowance2 = df_budget2.drop(columns=columns_to_drop2)
+           
   
     
-else:
-  df_selection2 = df_price_rating.head(channel_number)
-  df_budget2 = df_selection2.copy()
-  ratio_max = df_budget2['ratio'].max()
-  ratio_min = df_budget2['ratio'].min()
-  ratio_diff = ratio_max - ratio_min
-  df_budget2['distribution'] = df_budget2['ratio'] / df_budget2['ratio'].sum()
-  df_budget2['distribution'] = df_budget2['distribution'].apply(lambda x: round(x, 2))
-  df_budget2['allowance'] = input_budget * df_budget2['distribution']
-  df_bubble = df_budget2.copy()
-  columns_to_drop2 = ['average', 'index', 'Squared Average', 'ratio', 'distribution']
-  df_allowance2 = df_budget2.drop(columns=columns_to_drop2)
-
-
-st.title('Pricing Optimization')
-
+                pie_chart_data = []
+                
+                for _, row in df_pie_chart.iterrows():
+                  allowance = {
+                    'id': row['channel'],
+                    'Label': row['channel'],
+                    'value': row['budget']
+                  }
+                  pie_chart_data.append(allowance)
+            
+                with mui.Box(sx={"height": 400}):
+                          nivo.Pie(
+                            data=pie_chart_data,
+                            innerRadius=0.5,
+                            cornerRadius=0,
+                            padAngle=1,  
+                            margin={'top': 30, 'right': 100, 'bottom': 30, 'left': 100},
+                            theme={
+                              
+                              "textColor": "#31333F",
+                              "tooltip": {
+                                  "container": {
+                                      
+                                      "color": "#31333F",
+                                      }
+                                  }
+                              }
+                          )
+ 
+ 
+ with col2:
+ 
   
-st.dataframe(df_allowance2)
-
-######################################## bubble chart ##########################################
-
-
-sns.set_palette("Spectral")
-
-column_budget_drop = ['index', 'ratio', 'distribution']
-df_bubble = df_bubble.drop(columns=column_budget_drop)
-df_bubble['average'] = df_bubble['average'] * 5 / 25
-df_bubble['price'] = 1 / df_bubble['price']
-
-
-if input_budget != 0:
-  df_bubble['allowance'] = df_bubble['allowance']
-  plt.figure(figsize=(8, 6))
-  ax = sns.scatterplot(data=df_bubble, x='average', y='price', size='allowance', sizes=(10, 10000), alpha=1.0, legend=False, hue=df_bubble['channel'])
   
-  for index, row in df_bubble.iterrows():
-    label = row['channel']  # Get the label from the 'label' column
-    ax.annotate(label, (row['average'], row['price']), fontsize=12, ha='center')
+               st.write('Rating VS Price VS Budget')
+ 
+               fig2 = px.scatter(df_bubble,
+                                 x='Rating',
+                                 y='Price',
+                                 size='budget',
+                                 color='channel_x',
+                                 size_max=60,  # Increase the maximum bubble size
+                                 log_x=True,
+                                 text='channel_x',
+                                 labels={'budget': 'Bubble Size'},  # Rename the legend label
+                                 
+                                 
+                                )
+ 
+               fig2.update_traces(textfont_color='black')
+              
+              # Set chart title and axis labels
+               fig2.update_layout(
+                   
+                   showlegend=False,
+                   width=600,
+                   height=450,
+                   margin=dict(l=25, r=25, t=50, b=25),
+                   
+               )
+               
+               # Display the Plotly figure in Streamlit
+               
+               st.plotly_chart(fig2)
 
-  plt.xlim(df_bubble['average'].min() - 0.5, df_bubble['average'].max() + 0.5)
-  plt.ylim(df_bubble['price'].min() - 0.5, df_bubble['price'].max() + 0.5)
-  plt.gcf().set_facecolor('none')
-  st.pyplot(plt)
+     
 
-             
+################################################################################################################
 
-else:
-  st.text('Waiting for budget')
+
+st.subheader(' ', divider='grey')
+
+details = st.checkbox('Show Details')
+
+if details == True:
+ selected_format['channel'] = selected_format['channel'].str.title()
+ selected_format.columns = selected_format.columns.str.capitalize()
+ st.dataframe(selected_format)
+
+
+
+
+
+
+
+
+
