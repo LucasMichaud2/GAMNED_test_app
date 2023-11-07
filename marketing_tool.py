@@ -632,7 +632,7 @@ else:
     else:
 
         if search == True:
-    
+            channel_number = channel_number - 1
             format_pricing = format_pricing[format_pricing['channel'] != 'search']
             budget = input_budget - 2000
             uni_channels = set()
