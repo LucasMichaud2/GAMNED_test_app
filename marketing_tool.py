@@ -283,11 +283,13 @@ class GAMNED_UAE:
       
     if input_obj == 'branding display':
         df_rating.loc[df_rating['branding video'] == 0, 'branding'] += 10
+        df_rating.loc[df_rating['branding video'] == 1, 'branding'] -= 10
         df_heatmap = df_rating[['channel', 'formats', 'branding']]
         df_heatmap = df_heatmap.sort_values(by='branding', ascending=False)
 
     elif input_obj == 'branding video':
         df_rating.loc[df_rating['branding video'] == 1, 'branding'] += 10
+        df_rating.loc[df_rating['branding video'] == 0, 'branding'] -= 10
         df_heatmap = df_rating[['channel', 'formats', 'branding']]
         df_heatmap = df_heatmap.sort_values(by='branding', ascending=False)
 
@@ -582,7 +584,7 @@ else:
     if input_budget < 15000:
 
         if search == True:
-    
+            channel_number = channel_number - 1
             format_pricing = format_pricing[format_pricing['channel'] != 'search']
             budget = input_budget - 1000
             uni_channels = set()
@@ -792,11 +794,413 @@ def heatmap_data(top_format):
     labels = top_format['format'].tolist()
     scores = top_format['norm'].to_numpy()
     scores_matrix = scores.reshape(6, 7)
+    
     return labels, scores_matrix
 
 labels, scores_matrix = heatmap_data(top_format)
 
-    
+
+
+top_format = top_format.sort_values(by='norm', ascending=False)
+top_format['formats'] = top_format['formats'].replace('Video Ads With Conversation Button', 'Video Ads With Conv. Button')
+top_format['formats'] = top_format['formats'].replace('Video Ads With Website Button', 'Video Ads With Web. Button')
+top_format['format'] = top_format['channel'] + '<br>' + top_format['formats']
+
+index1 = [0, 7, 14, 21, 28, 35]
+index2 = [1, 8, 15, 22, 29, 36]
+index3 = [2, 9, 16, 23, 30, 37]
+index4 = [3, 10, 17, 24, 31, 38]
+index5 = [4, 11, 18, 25, 32, 39]
+index6 = [5, 12, 19, 26, 33, 40]
+index7 = [6, 13, 20, 27, 34, 41]
+
+heatmap1 = top_format.iloc[index1]
+heatmap2 = top_format.iloc[index2]
+heatmap3 = top_format.iloc[index3]
+heatmap4 = top_format.iloc[index4]
+heatmap5 = top_format.iloc[index5]
+heatmap6 = top_format.iloc[index6]
+heatmap7 = top_format.iloc[index7]
+
+
+# Define the data for the heatmap (colors, names, and scores)
+heatmap_data = [
+    {"name": "Item 1", "score": 0.2},
+    {"name": "Item 2", "score": 0.5},
+    {"name": "Item 3", "score": 0.8},
+    {"name": "Item 4", "score": 0.3},
+    {"name": "Item 5", "score": 0.9},
+]
+
+# Define a function to map scores to colors
+def get_color(score):
+    # You can define your own color mapping logic here
+    if score == 0:
+        return 'rgb(246, 247, 166)'
+    elif score < 0.05:
+        return 'rgb(248, 250, 127)'
+    elif score < 0.1:
+        return 'rgb(245, 247, 77)'
+    elif score < 0.15:
+        return 'rgb(247, 239, 77)'
+    elif score < 0.2:
+        return 'rgb(247, 224, 77)'
+    elif score < 0.25:
+        return 'rgb(247, 210, 77)'
+    elif score < 0.3:
+        return 'rgb(247, 196, 77)'
+    elif score < 0.35:
+        return 'rgb(247, 185, 77)'
+    elif score < 0.4:
+        return 'rgb(247, 173, 77)'
+    elif score < 0.45:
+        return 'rgb(247, 165, 77)'
+    elif score < 0.5:
+        return 'rgb(247, 159, 77)'
+    elif score < 0.55:
+        return 'rgb(247, 148, 77)'
+    elif score < 0.6:
+        return 'rgb(247, 134, 77)'
+    elif score < 0.65:
+        return 'rgb(247, 125, 77)'
+    elif score < 0.7:
+        return 'rgb(247, 114, 77)'
+    elif score < 0.75:  # Fixed threshold (was missing)
+        return 'rgb(247, 105, 77)'
+    elif score < 0.8:
+        return 'rgb(247, 97, 77)'
+    elif score < 0.85:
+        return 'rgb(240, 29, 29)'
+    elif score < 0.9:  # Fixed threshold (was missing)
+        return 'rgb(214, 24, 24)'
+    elif score < 0.95:  # Fixed threshold (was missing)
+        return 'rgb(191, 21, 21)'
+    elif score < 1:
+        return 'rgb(179, 21, 21)'
+    elif score == 1.0:
+        return 'rgb(163, 20, 20)'
+    else:
+        return 'rgb(163, 20, 20)'
+
+
+col10, col11, col12, col13, col14, col15, col16, col17, col18= st.columns([1, 2, 2, 2, 2, 2, 2, 2, 1])
+
+with col11:
+
+ with st.container():
+     st.markdown(
+         """
+         <style>
+         .heatmap-container {
+             display: flex;
+             flex-direction: column; /* Arrange squares vertically */
+         }
+ 
+         .heatmap-item {
+             width: 150px;
+             height: 75px;
+             margin-bottom: 10px; /* Add margin at the bottom of each square */
+             font-size: 10px;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             border-radius: 10px;
+             color: black;
+             box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2); /* Add a box shadow for 3D effect */
+         }
+         </style>
+         """,
+         unsafe_allow_html=True
+     )
+ 
+     for index, row in heatmap1.iterrows():
+         name = row['channel']
+         format = row['formats']
+         score = row['norm'] / 100
+         color = get_color(score)
+ 
+         # Use the 'st.markdown' to create colored boxes with shadows and labels
+         st.markdown(
+             f"""
+             <div class="heatmap-item" style="background-color: {color}; text-align: center; font-size: 12px;">
+                 {name}<br>
+                 {format}
+             </div>
+             """,
+             unsafe_allow_html=True
+         )
+
+with col12:
+
+ with st.container():
+     st.markdown(
+         """
+         <style>
+         .heatmap-container {
+             display: flex;
+             flex-direction: column; /* Arrange squares vertically */
+         }
+ 
+         .heatmap-item {
+             width: 150px;
+             height: 75px;
+             margin-bottom: 10px; /* Add margin at the bottom of each square */
+             font-size: 10px;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             border-radius: 10px;
+             color: black;
+             box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2); /* Add a box shadow for 3D effect */
+         }
+         </style>
+         """,
+         unsafe_allow_html=True
+     )
+ 
+     for index, row in heatmap2.iterrows():
+         name = row['channel']
+         format = row['formats']
+         score = row['norm'] / 100
+         color = get_color(score)
+ 
+         # Use the 'st.markdown' to create colored boxes with shadows and labels
+         st.markdown(
+             f"""
+             <div class="heatmap-item" style="background-color: {color}; text-align: center; font-size: 12px;">
+                 {name}<br>
+                 {format}
+             </div>
+             """,
+             unsafe_allow_html=True
+         )
+
+
+with col13:
+ with st.container():
+     st.markdown(
+         """
+         <style>
+         .heatmap-container {
+             display: flex;
+             flex-direction: column; /* Arrange squares vertically */
+         }
+ 
+         .heatmap-item {
+             width: 150px;
+             height: 75px;
+             margin-bottom: 10px; /* Add margin at the bottom of each square */
+             font-size: 10px;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             border-radius: 10px;
+             color: black;
+             box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2); /* Add a box shadow for 3D effect */
+         }
+         </style>
+         """,
+         unsafe_allow_html=True
+     )
+ 
+     for index, row in heatmap3.iterrows():
+         name = row['channel']
+         format = row['formats']
+         score = row['norm'] / 100
+         color = get_color(score)
+ 
+         # Use the 'st.markdown' to create colored boxes with shadows and labels
+         st.markdown(
+             f"""
+             <div class="heatmap-item" style="background-color: {color}; text-align: center; font-size: 12px;">
+                 {name}<br>
+                 {format}
+             </div>
+             """,
+             unsafe_allow_html=True
+         )
+
+
+with col14:
+ with st.container():
+     st.markdown(
+         """
+         <style>
+         .heatmap-container {
+             display: flex;
+             flex-direction: column; /* Arrange squares vertically */
+         }
+ 
+         .heatmap-item {
+             width: 150px;
+             height: 75px;
+             margin-bottom: 10px; /* Add margin at the bottom of each square */
+             font-size: 10px;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             border-radius: 10px;
+             color: black;
+             box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2); /* Add a box shadow for 3D effect */
+         }
+         </style>
+         """,
+         unsafe_allow_html=True
+     )
+ 
+     for index, row in heatmap4.iterrows():
+         name = row['channel']
+         format = row['formats']
+         score = row['norm'] / 100
+         color = get_color(score)
+ 
+         # Use the 'st.markdown' to create colored boxes with shadows and labels
+         st.markdown(
+             f"""
+             <div class="heatmap-item" style="background-color: {color}; text-align: center; font-size: 12px;">
+                 {name}<br>
+                 {format}
+             </div>
+             """,
+             unsafe_allow_html=True
+         )
+
+
+
+with col15:
+ with st.container():
+     st.markdown(
+         """
+         <style>
+         .heatmap-container {
+             display: flex;
+             flex-direction: column; /* Arrange squares vertically */
+         }
+ 
+         .heatmap-item {
+             width: 150px;
+             height: 75px;
+             margin-bottom: 10px; /* Add margin at the bottom of each square */
+             font-size: 10px;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             border-radius: 10px;
+             color: black;
+             box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2); /* Add a box shadow for 3D effect */
+         }
+         </style>
+         """,
+         unsafe_allow_html=True
+     )
+ 
+     for index, row in heatmap5.iterrows():
+         name = row['channel']
+         format = row['formats']
+         score = row['norm'] / 100
+         color = get_color(score)
+ 
+         # Use the 'st.markdown' to create colored boxes with shadows and labels
+         st.markdown(
+             f"""
+             <div class="heatmap-item" style="background-color: {color}; text-align: center; font-size: 12px;">
+                 {name}<br>
+                 {format}
+             </div>
+             """,
+             unsafe_allow_html=True
+         )
+
+
+with col16:
+ with st.container():
+     st.markdown(
+         """
+         <style>
+         .heatmap-container {
+             display: flex;
+             flex-direction: column; /* Arrange squares vertically */
+         }
+ 
+         .heatmap-item {
+             width: 150px;
+             height: 75px;
+             margin-bottom: 10px; /* Add margin at the bottom of each square */
+             font-size: 10px;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             border-radius: 10px;
+             color: black;
+             box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2); /* Add a box shadow for 3D effect */
+         }
+         </style>
+         """,
+         unsafe_allow_html=True
+     )
+ 
+     for index, row in heatmap6.iterrows():
+         name = row['channel']
+         format = row['formats']
+         score = row['norm'] / 100
+         color = get_color(score)
+ 
+         # Use the 'st.markdown' to create colored boxes with shadows and labels
+         st.markdown(
+             f"""
+             <div class="heatmap-item" style="background-color: {color}; text-align: center; font-size: 12px;">
+                 {name}<br>
+                 {format}
+             </div>
+             """,
+             unsafe_allow_html=True
+         )
+
+
+
+with col17:
+ with st.container():
+     st.markdown(
+         """
+         <style>
+         .heatmap-container {
+             display: flex;
+             flex-direction: column; /* Arrange squares vertically */
+         }
+ 
+         .heatmap-item {
+             width: 150px;
+             height: 75px;
+             margin-bottom: 10px; /* Add margin at the bottom of each square */
+             font-size: 10px;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             border-radius: 10px;
+             color: black;
+             box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2); /* Add a box shadow for 3D effect */
+         }
+         </style>
+         """,
+         unsafe_allow_html=True
+     )
+ 
+     for index, row in heatmap7.iterrows():
+         name = row['channel']
+         format = row['formats']
+         score = row['norm'] / 100
+         color = get_color(score)
+ 
+         # Use the 'st.markdown' to create colored boxes with shadows and labels
+         st.markdown(
+             f"""
+             <div class="heatmap-item" style="background-color: {color}; text-align: center; font-size: 12px;">
+                 {name}<br>
+                 {format}
+             </div>
+             """,
+             unsafe_allow_html=True
+         )
 
 # Sample data
 #labels = [f"Label {i+1}" for i in range(48)]  # 8 columns x 6 rows = 48 labels
@@ -806,70 +1210,12 @@ labels, scores_matrix = heatmap_data(top_format)
 #scores_matrix = scores.reshape(6, 8)
 
 # Define a custom color scale with more shades of red and yellow
-custom_color_scale = [
-    [0, 'rgb(255, 255, 102)'],    # Light yellow
-    [0.1, 'rgb(255, 255, 0)'],    # Yellow
-    [0.2, 'rgb(255, 220, 0)'],    # Yellow with a hint of orange
-    [0.4, 'rgb(255, 190, 0)'],    # Darker yellow
-    [0.6, 'rgb(255, 140, 0)'],    # Light red-orange
-    [0.7, 'rgb(255, 85, 0)'],     # Red-orange
-    [0.8, 'rgb(255, 51, 0)'],     # Red
-    [1, 'rgb(204, 0, 0)']         # Dark red
-]
-
-# Create a custom heatmap using Plotly with 8 columns and 6 rows
-fig = go.Figure()
-
-# Add the heatmap trace with the custom color scale
-fig.add_trace(go.Heatmap(
-    z=scores_matrix,
-    colorscale=custom_color_scale,  # Use the custom color scale
-    hoverongaps=False,
-    showscale=False,  # Hide the color scale
-    hovertemplate='%{z:.2f}<extra></extra>',
-    xgap=2,
-    ygap=2# Customize hover tooltip
-))
-
-
-# Add labels as annotations in the heatmap squares
-for i, label in enumerate(labels):
-    row = i // 7
-    col = i % 7
-    
-    fig.add_annotation(
-        text=label,
-        x=col,
-        y=row,
-        xref='x',
-        yref='y',
-        showarrow=False,
-        font=dict(size=10, color='black'),
-        align='center'
-    )
-
-# Remove the axis labels and lines
-fig.update_xaxes(showline=False, showticklabels=False)
-fig.update_yaxes(showline=False, showticklabels=False)
-
-fig.update_layout(
-    width=750,  # Adjust the width as needed
-    height=500,  # Adjust the height for 6 rows
-    hovermode='closest',
-    margin=dict(l=25, r=25, t=25, b=25),
-    
-    
-)
-
-
-
-# Display the Plotly figure in Streamlit with full width
-st.plotly_chart(fig, use_container_width=True)
 
 
 
 #################################################################################################################################
 
+st.divider()
   
 df_pie_chart = (budget_channel)
 
@@ -987,6 +1333,10 @@ if details == True:
  selected_format['channel'] = selected_format['channel'].str.title()
  selected_format.columns = selected_format.columns.str.capitalize()
  st.dataframe(selected_format)
+
+
+########################################################### Formatting data for heatmap ######################################
+
 
 
 
