@@ -102,6 +102,8 @@ selected_objective, selected_target, selected_region, excluded_channel, selected
 
 selected_objective = selected_objective.lower()
 
+decider = selected_objective
+
 excluded_channel = [item.lower() for item in excluded_channel]
 
 st.subheader(' ', divider='grey')
@@ -140,14 +142,15 @@ class GAMNED_UAE:
                    '45-54, 55-64, 65+',
                    '55-64, 65+',
                    '']
-    col1 = ['instagram', 'facebook', 'linkedin', 'snapchat', 'youtube']
-    col2 = [8, 4.7, 0, 20, 0]
-    col3 = [31, 21.5, 21.7, 38.8, 15]
-    col4 = [30, 34.3, 60, 22.8, 20.7]
-    col5 = [16, 19.3, 10, 13.8, 16.7]
-    col6 = [8, 11.6, 5.4, 3.8, 11.9]
-    col7 = [4, 7.2, 2.9, 0, 8.8]
-    col8 = [3, 5.6, 0, 0, 9]
+    col1 = ['instagram', 'facebook', 'linkedin', 'snapchat', 'youtube', 'tiktok', 'twitter', 'twitch']
+    col2 = [8, 4.7, 0, 20, 0, 25, 7.8, 20]
+    col3 = [31, 21.5, 21.7, 38.8, 15, 33.8, 25.2, 21]
+    col4 = [30, 34.3, 60, 22.8, 20.7, 22.8, 26.6, 32]
+    col5 = [16, 19.3, 10, 13.8, 16.7, 13.8, 28.4, 17]
+    col6 = [8, 11.6, 5.4, 3.8, 11.9, 3.8, 8, 7]
+    col7 = [4, 7.2, 2.9, 0, 8.8, 0, 4, 3]
+    col8 = [3, 5.6, 0, 0, 9, 0, 0, 0]
+    
     col9 = [x + y for x, y in zip(col2, col3)]
     col10 = [x + y for x, y in zip(col9, col4)]
     col11 = [x + y for x, y in zip(col10, col5)]
@@ -169,7 +172,7 @@ class GAMNED_UAE:
     col27 = [x + y for x, y in zip(col6, col7)]
     col28 = [x + y for x, y in zip(col27, col8)]
     col29 = [x + y for x, y in zip(col7, col8)]
-    col30 = [0, 0, 0, 0, 0]
+    col30 = [0, 0, 0, 0, 0, 0, 0, 0]
     
     
     
@@ -255,7 +258,7 @@ class GAMNED_UAE:
         'conversion': age_column
     }
     age_table = pd.DataFrame(age_dic)
-    age_table.iloc[0:, 1:] =  age_table.iloc[0:, 1:] / 10
+    age_table.iloc[0:, 1:] =  age_table.iloc[0:, 1:] / 5
 
     temp1 = pd.concat([df_freq, age_table], axis=0)
     temp1 = pd.concat([temp1, df_rating], axis=0)
@@ -282,16 +285,22 @@ class GAMNED_UAE:
 
       
     if input_obj == 'branding display':
-        df_rating.loc[df_rating['branding video'] == 0, 'branding'] += 10
-        df_rating.loc[df_rating['branding video'] == 1, 'branding'] -= 10
+        df_rating['id'] = df_rating['channel'] + '-' + df_rating['formats']
+        df_rating = df_rating[df_rating['branding video'] == 0]
         df_heatmap = df_rating[['channel', 'formats', 'branding']]
         df_heatmap = df_heatmap.sort_values(by='branding', ascending=False)
 
     elif input_obj == 'branding video':
-        df_rating.loc[df_rating['branding video'] == 1, 'branding'] += 10
-        df_rating.loc[df_rating['branding video'] == 0, 'branding'] -= 10
+        
+        df_rating['id'] = df_rating['channel'] + '-' + df_rating['formats']
+        df_rating.loc[df_rating['id'] == 'instagram-Story', 'branding video'] = 1
+        df_rating.loc[df_rating['id'] == 'facebook-Story', 'branding video'] = 1
+        df_rating.loc[df_rating['id'] == 'snapchat-Story', 'branding video'] = 1
+        df_rating.loc[df_rating['id'] == 'snapchat-Collection', 'branding video'] = 1
+        df_rating = df_rating[df_rating['branding video'] == 1]
         df_heatmap = df_rating[['channel', 'formats', 'branding']]
         df_heatmap = df_heatmap.sort_values(by='branding', ascending=False)
+        
 
     else:
         df_heatmap = df_rating[['channel', 'formats', input_obj]]
@@ -632,7 +641,7 @@ else:
     else:
 
         if search == True:
-            channel_number = channel_number - 1
+    
             format_pricing = format_pricing[format_pricing['channel'] != 'search']
             budget = input_budget - 2000
             uni_channels = set()
@@ -770,20 +779,37 @@ df_bubble[selected_objective] = df_bubble[selected_objective].apply(round_up_wit
 
 def formatting_heatmap(format_rating, selected_objective):
 
-    format_rating = format_rating.drop('format', axis=1)
-    format_rating['channel'] = format_rating['channel'].str.upper()
-    format_rating['formats'] = format_rating['formats'].str.title()
-    format_rating['format'] = format_rating['channel'] + ' - ' + format_rating['formats']
-    top_format = format_rating.head(42)
-    min_top_format = top_format['norm'].min()
-    max_top_format = top_format['norm'].max()
-    top_format = top_format.drop(selected_objective, axis=1)
-    top_format['norm'] = (((top_format['norm'] - min_top_format) / (max_top_format - min_top_format)) * 100).round(0)
-    #top_format = top_format.sample(frac=1)
-    top_format = top_format.sort_values(by='norm', ascending=True)
-    return top_format
+    
+    if decider == 'branding video':
+       format_rating = format_rating.drop('format', axis=1)
+       format_rating['channel'] = format_rating['channel'].str.upper()
+       format_rating['formats'] = format_rating['formats'].str.title()
+       format_rating['format'] = format_rating['channel'] + ' - ' + format_rating['formats']
+       top_format = format_rating.head(28)
+       min_top_format = top_format['norm'].min()
+       max_top_format = top_format['norm'].max()
+       top_format = top_format.drop(selected_objective, axis=1)
+       top_format['norm'] = (((top_format['norm'] - min_top_format) / (max_top_format - min_top_format)) * 100).round(0)
+       top_format = top_format.sort_values(by='norm', ascending=True)
+       return top_format
+     
+    else: 
+  
+       format_rating = format_rating.drop('format', axis=1)
+       format_rating['channel'] = format_rating['channel'].str.upper()
+       format_rating['formats'] = format_rating['formats'].str.title()
+       format_rating['format'] = format_rating['channel'] + ' - ' + format_rating['formats']
+       top_format = format_rating.head(42)
+       min_top_format = top_format['norm'].min()
+       max_top_format = top_format['norm'].max()
+       top_format = top_format.drop(selected_objective, axis=1)
+       top_format['norm'] = (((top_format['norm'] - min_top_format) / (max_top_format - min_top_format)) * 100).round(0)
+       #top_format = top_format.sample(frac=1)
+       top_format = top_format.sort_values(by='norm', ascending=True)
+       return top_format
 
 top_format = formatting_heatmap(format_rating, selected_objective)
+
 
 
 def heatmap_data(top_format):
@@ -797,42 +823,18 @@ def heatmap_data(top_format):
     
     return labels, scores_matrix
 
-labels, scores_matrix = heatmap_data(top_format)
 
 
+
+ ############################################# heatmap #######################################################################
 
 top_format = top_format.sort_values(by='norm', ascending=False)
 top_format['formats'] = top_format['formats'].replace('Video Ads With Conversation Button', 'Video Ads With Conv. Button')
 top_format['formats'] = top_format['formats'].replace('Video Ads With Website Button', 'Video Ads With Web. Button')
+top_format['formats'] = top_format['formats'].replace('Image Ads With Conversation Button', 'Image Ads With Conv. Button')
 top_format['format'] = top_format['channel'] + '<br>' + top_format['formats']
 
-index1 = [0, 7, 14, 21, 28, 35]
-index2 = [1, 8, 15, 22, 29, 36]
-index3 = [2, 9, 16, 23, 30, 37]
-index4 = [3, 10, 17, 24, 31, 38]
-index5 = [4, 11, 18, 25, 32, 39]
-index6 = [5, 12, 19, 26, 33, 40]
-index7 = [6, 13, 20, 27, 34, 41]
 
-heatmap1 = top_format.iloc[index1]
-heatmap2 = top_format.iloc[index2]
-heatmap3 = top_format.iloc[index3]
-heatmap4 = top_format.iloc[index4]
-heatmap5 = top_format.iloc[index5]
-heatmap6 = top_format.iloc[index6]
-heatmap7 = top_format.iloc[index7]
-
-
-# Define the data for the heatmap (colors, names, and scores)
-heatmap_data = [
-    {"name": "Item 1", "score": 0.2},
-    {"name": "Item 2", "score": 0.5},
-    {"name": "Item 3", "score": 0.8},
-    {"name": "Item 4", "score": 0.3},
-    {"name": "Item 5", "score": 0.9},
-]
-
-# Define a function to map scores to colors
 def get_color(score):
     # You can define your own color mapping logic here
     if score == 0:
@@ -882,6 +884,46 @@ def get_color(score):
     else:
         return 'rgb(163, 20, 20)'
 
+if decider == 'branding video':
+
+  index1 = [0, 7, 14, 21]
+  index2 = [1, 8, 15, 22]
+  index3 = [2, 9, 16, 23]
+  index4 = [3, 10, 17, 24]
+  index5 = [4, 11, 18, 25]
+  index6 = [5, 12, 19, 26]
+  index7 = [6, 13, 20, 27]
+
+  heatmap1 = top_format.iloc[index1]
+  heatmap2 = top_format.iloc[index2]
+  heatmap3 = top_format.iloc[index3]
+  heatmap4 = top_format.iloc[index4]
+  heatmap5 = top_format.iloc[index5]
+  heatmap6 = top_format.iloc[index6]
+  heatmap7 = top_format.iloc[index7]
+
+else:
+ 
+  index1 = [0, 7, 14, 21, 28, 35]
+  index2 = [1, 8, 15, 22, 29, 36]
+  index3 = [2, 9, 16, 23, 30, 37]
+  index4 = [3, 10, 17, 24, 31, 38]
+  index5 = [4, 11, 18, 25, 32, 39]
+  index6 = [5, 12, 19, 26, 33, 40]
+  index7 = [6, 13, 20, 27, 34, 41]
+  
+  heatmap1 = top_format.iloc[index1]
+  heatmap2 = top_format.iloc[index2]
+  heatmap3 = top_format.iloc[index3]
+  heatmap4 = top_format.iloc[index4]
+  heatmap5 = top_format.iloc[index5]
+  heatmap6 = top_format.iloc[index6]
+  heatmap7 = top_format.iloc[index7]
+
+
+# Define a function to map scores to colors
+
+
 
 col10, col11, col12, col13, col14, col15, col16, col17, col18= st.columns([1, 2, 2, 2, 2, 2, 2, 2, 1])
 
@@ -906,7 +948,7 @@ with col11:
              justify-content: center;
              border-radius: 10px;
              color: black;
-             box-shadow: 0 6px 10px 0 rgba(0, 0, 0, 0.2); /* Add a box shadow for 3D effect */
+             box-shadow: 0 6px 10px 0 rgba(0, 0, 0, 0.5); /* Add a box shadow for 3D effect */
          }
          </style>
          """,
@@ -1231,8 +1273,11 @@ df_allow_table.columns = new_cols
 
 df_bubble.rename(columns={selected_objective: 'Rating'}, inplace=True)
 df_bubble.rename(columns={'price': 'Price'}, inplace=True)
+df_bubble['Price'] = df_bubble['Price'] + np.round(np.random.rand(len(df_bubble)), 1)
 df_bubble['channel_x'] = df_bubble['channel_x'].str.title()
 df_bubble['channel_x'] = df_bubble['channel_x'].replace('Iga', 'IGA')
+df_bubble['format'] = df_bubble['channel_x'] + '\n' + df_bubble['formats_x']
+
 
 
 if input_budget == 0: 
@@ -1298,7 +1343,7 @@ else:
                                  color='channel_x',
                                  size_max=60,  # Increase the maximum bubble size
                                  log_x=True,
-                                 text='channel_x',
+                                 text='format',
                                  labels={'budget': 'Bubble Size'},  # Rename the legend label
                                  
                                  
