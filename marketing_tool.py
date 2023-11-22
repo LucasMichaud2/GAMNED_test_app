@@ -90,15 +90,47 @@ def input_layer():
   selected_region = box3.selectbox('Region', country_df)
   excluded_channel = box4.multiselect('Channel to Exclude', excluded_channel_list)
   selected_age = box5.multiselect('Age', age_df)
+  selected_age = sorted(selected_age)
+  ################################### Sort age issue #####################################
+  if selected_age == ['13-17', '25-34']:
+   selected_age = ['13-17', '18-24', '25-34']
+  elif selected_age == ['13-17', '35-44']:
+   selected_age = ['13-17', '18-24', '25-34', '35-44']
+  elif selected_age == ['13-17', '45-54']:
+   selected_age = ['13-17', '18-24', '25-34', '35-44', '45-54']
+  elif selected_age == ['13-17', '55-64']:
+   selected_age = ['13-17', '18-24', '25-34', '35-44', '45-54', '55-64']
+  elif selected_age == ['13-17', '65+']:
+   selected_age = ['13-17', '18-24', '25-34', '35-44', '45-54', '55-64', '65+']
+  elif selected_age == ['18-24', '35-44']:
+   selected_age = ['18-24', '25-34', '35-44']
+  elif selected_age == ['18-24', '45-54']:
+   selected_age = ['18-24', '25-34', '35-44', '45-54']
+  elif selected_age == ['18-24', '55-64']:
+   selected_age = ['18-24', '25-34', '35-44', '45-54', '55-64']
+  elif selected_age == ['18-24', '65+']:
+   selected_age = ['18-24', '25-34', '35-44', '45-54', '55-64', '65+']
+  elif selected_age == ['25-34', '45-54']:
+   selected_age = ['25-34', '35-44', '45-54']
+  elif selected_age == ['25-34', '55-64']:
+   selected_age = ['25-34', '35-44', '45-54', '55-64']
+  elif selected_age == ['25-34', '65+']:
+   selected_age = ['25-34', '35-44', '45-54', '55-64', '65+']
+  elif selected_age == ['35-44', '55-64']:
+   selected_age = ['35-44', '45-54', '55-64']
+  elif selected_age == ['35-44', '65+']:
+   selected_age = ['35-44', '45-54', '55-64', '65+']
+  elif selected_age == ['45-54', '65+']:
+    selected_age = ['45-54', '55-64', '65+']
   selected_age = ', '.join(selected_age)
   input_budget = box6.number_input('Budget $', value=0)
   channel_number = box7.number_input('Channel Number', value=0)
-  search = st.checkbox('Include Search')
+  input_search = st.slider('Search Allocation', 0, 3000, 0, 500)
   
 
-  return selected_objective, selected_target, selected_region, excluded_channel, selected_age, input_budget, channel_number, search
+  return selected_objective, selected_target, selected_region, excluded_channel, selected_age, input_budget, channel_number, input_search
 
-selected_objective, selected_target, selected_region, excluded_channel, selected_age, input_budget, channel_number, search = input_layer()
+selected_objective, selected_target, selected_region, excluded_channel, selected_age, input_budget, channel_number, input_search = input_layer()
 
 selected_objective = selected_objective.lower()
 
@@ -142,14 +174,15 @@ class GAMNED_UAE:
                    '45-54, 55-64, 65+',
                    '55-64, 65+',
                    '']
-    col1 = ['instagram', 'facebook', 'linkedin', 'snapchat', 'youtube', 'tiktok', 'twitter', 'twitch']
-    col2 = [8, 4.7, 0, 20, 0, 25, 7.8, 20]
-    col3 = [31, 21.5, 21.7, 38.8, 15, 33.8, 25.2, 21]
-    col4 = [30, 34.3, 60, 22.8, 20.7, 22.8, 26.6, 32]
-    col5 = [16, 19.3, 10, 13.8, 16.7, 13.8, 28.4, 17]
-    col6 = [8, 11.6, 5.4, 3.8, 11.9, 3.8, 8, 7]
-    col7 = [4, 7.2, 2.9, 0, 8.8, 0, 4, 3]
-    col8 = [3, 5.6, 0, 0, 9, 0, 0, 0]
+    col1 = ['instagram', 'facebook', 'linkedin', 'snapchat', 'youtube', 'tiktok', 'twitter', 'twitch', 'display', 'in game advertising',
+           'connected tv', 'amazon', 'dooh']
+    col2 = [8, 4.7, 0, 20, 0, 25, 7.8, 20, 14, 25, 5, 5, 0]
+    col3 = [31, 21.5, 21.7, 38.8, 15, 33.8, 25.2, 21, 31, 30, 10, 10, 5]
+    col4 = [30, 34.3, 40, 22.8, 20.7, 22.8, 26.6, 32, 27, 15, 15, 15, 10]
+    col5 = [16, 19.3, 10, 13.8, 16.7, 13.8, 28.4, 17, 15, 5, 20, 30, 10]
+    col6 = [8, 11.6, 20, 3.8, 11.9, 3.8, 8, 7, 7, 0, 30, 30, 10]
+    col7 = [4, 4, 2.9, 0, 8.8, -5, 4, 3, 3, 0, 25, 20, 10]
+    col8 = [-5, 2, 0, 0, 9, -5, 0, 0, 2, -10, 40, 30, 15]
     
     col9 = [x + y for x, y in zip(col2, col3)]
     col10 = [x + y for x, y in zip(col9, col4)]
@@ -172,7 +205,7 @@ class GAMNED_UAE:
     col27 = [x + y for x, y in zip(col6, col7)]
     col28 = [x + y for x, y in zip(col27, col8)]
     col29 = [x + y for x, y in zip(col7, col8)]
-    col30 = [0, 0, 0, 0, 0, 0, 0, 0]
+    col30 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     
     
     
@@ -258,7 +291,7 @@ class GAMNED_UAE:
         'conversion': age_column
     }
     age_table = pd.DataFrame(age_dic)
-    age_table.iloc[0:, 1:] =  age_table.iloc[0:, 1:] / 5
+    age_table.iloc[0:, 1:] =  age_table.iloc[0:, 1:] / 2.5
 
     temp1 = pd.concat([df_freq, age_table], axis=0)
     temp1 = pd.concat([temp1, df_rating], axis=0)
@@ -447,16 +480,23 @@ def round_up_with_infinity(x):
 
 format_pricing['rating'] = format_pricing['rating'].apply(round_up_with_infinity)
 
+############################################# KnapSack Algo ####################################################################
+
+
+
 
 ############################################# Building Budget ##################################################################
+
 
 
 if channel_number == 0:
 
     if input_budget >= 10000 and input_budget < 15000:
         
-        if search == True:
-            budget = input_budget - 1000
+        #if search == True:
+        if input_search > 0:
+            #budget = input_budget - 1000
+            budget = input_budget - input_search
             n_format = budget // 4000 + 1
             format_pricing = format_pricing[format_pricing['channel'] != 'search']
             selected_format = format_pricing.head(n_format)
@@ -472,8 +512,8 @@ if channel_number == 0:
     
             budget_channel = selected_format.groupby('channel')['budget'].sum().reset_index()
             
-            search_row = {'channel': 'search', 'budget': 1000}
-            budget_channel.loc[len(budget_channel.index)] = ['search', 1000]
+            search_row = {'channel': 'search', 'budget': input_search}
+            budget_channel.loc[len(budget_channel.index)] = ['search', input_search]
             budget_channel = budget_channel.sort_values(by='budget', ascending=False)
 
             
@@ -501,8 +541,8 @@ if channel_number == 0:
 
     elif input_budget >= 15000:
         
-        if search == True:
-            budget = input_budget - 2000
+        if input_search > 0:
+            budget = input_budget - input_search
             n_format = budget // 4000 + 1
             format_pricing = format_pricing[format_pricing['channel'] != 'search']
             selected_format = format_pricing.head(n_format)
@@ -519,7 +559,7 @@ if channel_number == 0:
             budget_channel = selected_format.groupby('channel')['budget'].sum().reset_index()
             
             search_row = {'channel': 'search', 'budget': 1000}
-            budget_channel.loc[len(budget_channel.index)] = ['search', 2000]
+            budget_channel.loc[len(budget_channel.index)] = ['search', input_search]
             budget_channel = budget_channel.sort_values(by='budget', ascending=False)
 
             
@@ -546,9 +586,9 @@ if channel_number == 0:
 
     else:
 
-        if search == True:
+        if input_search > 0:
             
-            budget = input_budget - 1000
+            budget = input_budget - input_search
             format_pricing = format_pricing[format_pricing['channel'] != 'search']
             n_format = 2
             selected_format = format_pricing.head(n_format)
@@ -563,7 +603,7 @@ if channel_number == 0:
             
     
             budget_channel = selected_format.groupby('channel')['budget'].sum().reset_index()
-            budget_channel.loc[len(budget_channel.index)] = ['search', 1000]
+            budget_channel.loc[len(budget_channel.index)] = ['search', input_search]
             budget_channel = budget_channel.sort_values(by='budget', ascending=False)
     
             
@@ -592,10 +632,10 @@ else:
 
     if input_budget < 15000:
 
-        if search == True:
-            channel_number = channel_number - 1
+        if input_search > 0:
+            #channel_number = channel_number - 1
             format_pricing = format_pricing[format_pricing['channel'] != 'search']
-            budget = input_budget - 1000
+            budget = input_budget - input_search
             uni_channels = set()
             consecutive_rows = []
         
@@ -611,7 +651,7 @@ else:
             selected_format['budget'] = budget * selected_format['rating'] / (selected_format['rating'].sum())
             selected_format['budget'] = selected_format['budget'].round(0)
             budget_channel = selected_format.groupby('channel')['budget'].sum().reset_index()
-            budget_channel.loc[len(budget_channel.index)] = ['search', 1000]
+            budget_channel.loc[len(budget_channel.index)] = ['search', input_search]
             budget_channel = budget_channel.sort_values(by='budget', ascending=False)
         
             
@@ -640,10 +680,10 @@ else:
 
     else:
 
-        if search == True:
+        if input_search > 0:
     
             format_pricing = format_pricing[format_pricing['channel'] != 'search']
-            budget = input_budget - 2000
+            budget = input_budget - input_search
             uni_channels = set()
             consecutive_rows = []
         
@@ -659,7 +699,7 @@ else:
             selected_format['budget'] = budget * selected_format['rating'] / (selected_format['rating'].sum())
             selected_format['budget'] = selected_format['budget'].round(0)
             budget_channel = selected_format.groupby('channel')['budget'].sum().reset_index()
-            budget_channel.loc[len(budget_channel.index)] = ['search', 2000]
+            budget_channel.loc[len(budget_channel.index)] = ['search', input_search]
             budget_channel = budget_channel.sort_values(by='budget', ascending=False)
         
             
@@ -766,7 +806,8 @@ top_rating = top_rating.drop(columns=col_drop1)
 top_budget = top_budget.drop(columns=col_drop2)
 new_val = [1000] * len(top_rating)
 top_rating['budget'] = new_val
-df_bubble = pd.concat([top_budget, top_rating])
+#df_bubble = pd.concat([top_budget, top_rating])
+df_bubble = top_budget.copy()
 df_bubble.reset_index(drop=True, inplace=True)
 df_bubble = df_bubble.drop_duplicates(subset=['unique'])
 drop_col = ['unique']
@@ -1274,6 +1315,7 @@ df_allow_table.columns = new_cols
 df_bubble.rename(columns={selected_objective: 'Rating'}, inplace=True)
 df_bubble.rename(columns={'price': 'Price'}, inplace=True)
 df_bubble['Price'] = df_bubble['Price'] + np.round(np.random.rand(len(df_bubble)), 1)
+df_bubble['Price'] = np.log(df_bubble['Price'])
 df_bubble['channel_x'] = df_bubble['channel_x'].str.title()
 df_bubble['channel_x'] = df_bubble['channel_x'].replace('Iga', 'IGA')
 df_bubble['format'] = df_bubble['channel_x'] + '\n' + df_bubble['formats_x']
@@ -1381,7 +1423,6 @@ if details == True:
 
 
 ########################################################### Formatting data for heatmap ######################################
-
 
 
 
