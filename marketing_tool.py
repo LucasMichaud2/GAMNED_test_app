@@ -176,7 +176,7 @@ class GAMNED_UAE:
                    '']
     col1 = ['instagram', 'facebook', 'linkedin', 'snapchat', 'youtube', 'tiktok', 'twitter', 'twitch', 'display', 'in game advertising',
            'connected tv', 'amazon', 'dooh']
-    col2 = [8, 4.7, 0, 20, 0, 25, 7.8, 20, 14, 25, 5, 5, 0]
+    col2 = [15, 4.7, 0, 20, 0, 25, 7.8, 20, 14, 25, 5, 5, 0]
     col3 = [31, 21.5, 21.7, 38.8, 15, 33.8, 25.2, 21, 31, 30, 10, 10, 5]
     col4 = [30, 34.3, 40, 22.8, 20.7, 22.8, 26.6, 32, 27, 15, 15, 15, 10]
     col5 = [16, 19.3, 10, 13.8, 16.7, 13.8, 28.4, 17, 15, 5, 20, 30, 10]
